@@ -1,0 +1,248 @@
+/*
+  Tiny Consent component styles.
+  Only the custom properties below change per brand. In Webflow, bind the same
+  values to a variable collection and style the classes with the Style panel.
+*/
+
+:root {
+  --tc-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --tc-bg: #ffffff;
+  --tc-text: #111827;
+  --tc-muted: #6b7280;
+  --tc-accent: #111827;
+  --tc-on-accent: #ffffff;
+  --tc-radius: 14px;
+
+  /* Derived: panels cap the radius so a pill value (999px) only rounds buttons. */
+  --tc-radius-panel: min(var(--tc-radius), 28px);
+  --tc-radius-row: min(calc(var(--tc-radius) * 0.6), 16px);
+}
+
+.brand-forest {
+  --tc-font: Georgia, "Times New Roman", serif;
+  --tc-bg: #f3f6f1;
+  --tc-text: #16301f;
+  --tc-muted: #4f6b58;
+  --tc-accent: #1f6b3a;
+  --tc-on-accent: #f3f6f1;
+  --tc-radius: 4px;
+}
+
+.brand-night {
+  --tc-bg: #0f1218;
+  --tc-text: #e9ecf3;
+  --tc-muted: #9aa3b5;
+  --tc-accent: #8b9cff;
+  --tc-on-accent: #0f1218;
+  --tc-radius: 20px;
+}
+
+.brand-coral {
+  --tc-font: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  --tc-bg: #fff7f3;
+  --tc-text: #2b1a14;
+  --tc-muted: #8a6f66;
+  --tc-accent: #ff5a3c;
+  --tc-on-accent: #ffffff;
+  --tc-radius: 999px;
+}
+
+/* Root: a fixed layer that never blocks the page by itself. */
+.tc-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  font-family: var(--tc-font);
+  color: var(--tc-text);
+}
+
+.tc-root > * {
+  pointer-events: auto;
+}
+
+/* Banner */
+.tc-banner {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  width: min(440px, calc(100vw - 40px));
+  padding: 22px 22px 20px;
+  background: var(--tc-bg);
+  border-radius: var(--tc-radius-panel);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.tc-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tc-brand_mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tc-accent);
+}
+
+.tc-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.tc-text {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--tc-muted);
+}
+
+.tc-link {
+  color: var(--tc-text);
+  text-decoration: underline;
+}
+
+.tc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tc-button {
+  appearance: none;
+  border: 1px solid var(--tc-accent);
+  background: var(--tc-accent);
+  color: var(--tc-on-accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: calc(var(--tc-radius) * 0.75);
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.tc-button:hover {
+  transform: translateY(-1px);
+}
+
+.tc-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--tc-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.tc-button--ghost {
+  background: transparent;
+  color: var(--tc-text);
+  border-color: color-mix(in srgb, var(--tc-text) 18%, transparent);
+}
+
+/* Preferences */
+.tc-preferences {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.tc-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 16, 0.45);
+}
+
+.tc-dialog {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 28px;
+  background: var(--tc-bg);
+  border-radius: var(--tc-radius-panel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+}
+
+.tc-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tc-muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tc-close:hover {
+  background: color-mix(in srgb, var(--tc-text) 8%, transparent);
+}
+
+.tc-form {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 20px;
+}
+
+.tc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--tc-radius-row);
+  border: 1px solid color-mix(in srgb, var(--tc-text) 10%, transparent);
+  cursor: pointer;
+}
+
+.tc-row:hover {
+  background: color-mix(in srgb, var(--tc-text) 4%, transparent);
+}
+
+.tc-checkbox {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--tc-accent);
+  flex: none;
+}
+
+.tc-row_text {
+  display: grid;
+  gap: 2px;
+}
+
+.tc-row_title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tc-row_desc {
+  font-size: 13px;
+  color: var(--tc-muted);
+}
+
+@media (max-width: 560px) {
+  .tc-banner {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+
+  .tc-actions {
+    justify-content: stretch;
+  }
+
+  .tc-button {
+    flex: 1 1 auto;
+  }
+}
