@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiny Consent preview</title>
+
+  <!-- 1. Tiny Consent first, synchronous, before every tracker. -->
+  <script src="../dist/tiny-consent.js" data-tc-mode="opt-in" data-tc-cookie-days="180" data-tc-block="cdn.demo-tracker.test:analytics"></script>
+
+  <!-- Demo helper (essential): collects events for the status panel. -->
+  <script>
+    window.__demoEvents = [];
+    window.__demoLog = function (message) {
+      window.__demoEvents.push({ at: new Date(), message: message });
+      document.dispatchEvent(new CustomEvent('demo:log'));
+    };
+  </script>
+
+  <!-- 2a. Marked inline tracker: waits for the analytics category. -->
+  <script type="text/plain" data-tc-category="analytics">
+    window.__demoLog('Marked inline analytics script executed');
+  </script>
+
+  <!-- 2b. Unmarked tracker on a known host: auto-blocked by hostname. -->
+  <script src="https://www.googletagmanager.com/gtag/js?id=G-DEMO"></script>
+
+  <!-- 2c. Marked external tracker that needs two categories. -->
+  <script type="text/plain" data-tc-src="./tracker.js" data-tc-category="analytics, marketing"></script>
+
+  <link rel="stylesheet" href="./demo.css" />
+  <link rel="stylesheet" href="./tiny-consent-theme.css" />
+</head>
+<body>
+  <header class="demo-header">
+    <div class="demo-wrap">
+      <a class="demo-logo" href="./">Tiny Consent</a>
+      <nav class="demo-nav">
+        <a href="./">Docs</a>
+        <a href="#status">Status</a>
+        <a href="#embeds">Embeds</a>
+        <a href="#" data-tc-element="open-preferences">Cookie settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="demo-wrap">
+    <section class="demo-hero">
+      <p class="demo-eyebrow">Preview</p>
+      <h1>The component, live.</h1>
+      <p class="demo-lede">
+        The banner and the preferences panel on this page are plain HTML with the same <code>data-tc</code> attributes you
+        add in the Designer. Everything visual comes from the CSS variables in <code>tiny-consent-theme.css</code>. Switch
+        a brand to see the same component restyled. Setup steps are on the <a href="./">docs page</a>.
+      </p>
+      <div class="demo-brands" role="group" aria-label="Brand presets">
+        <button type="button" class="demo-chip is-active" data-brand="">Default</button>
+        <button type="button" class="demo-chip" data-brand="brand-forest">Forest</button>
+        <button type="button" class="demo-chip" data-brand="brand-night">Night</button>
+        <button type="button" class="demo-chip" data-brand="brand-coral">Coral</button>
+      </div>
+    </section>
+
+    <section id="status" class="demo-grid">
+      <div class="demo-card">
+        <h2>Consent</h2>
+        <pre id="consent-json" class="demo-pre">…</pre>
+        <div class="demo-actions">
+          <button type="button" class="demo-btn" data-tc-element="open-preferences">Open preferences</button>
+          <button type="button" class="demo-btn demo-btn--ghost" id="reset">Reset and show banner</button>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h2>Tags on this page</h2>
+        <table class="demo-table">
+          <thead>
+            <tr><th>Tag</th><th>Category</th><th>State</th></tr>
+          </thead>
+          <tbody id="tags"></tbody>
+        </table>
+        <div class="demo-actions">
+          <button type="button" class="demo-btn demo-btn--ghost" id="inject">Inject a marketing pixel dynamically</button>
+        </div>
+      </div>
+
+      <div class="demo-card demo-card--wide">
+        <h2>Event log</h2>
+        <ol id="log" class="demo-log"></ol>
+      </div>
+    </section>
+
+    <section id="embeds" class="demo-section">
+      <h2>Blocked embed with placeholder</h2>
+      <p>
+        The iframe keeps its URL in <code>data-tc-src</code>. The placeholder carries the same category and disappears when
+        that category is allowed.
+      </p>
+      <div class="demo-embed">
+        <div class="demo-placeholder" data-tc-element="placeholder" data-tc-category="marketing">
+          <p>This video is blocked until you allow marketing cookies.</p>
+          <button type="button" class="demo-btn" data-tc-element="open-preferences">Review cookie settings</button>
+        </div>
+        <iframe
+          data-tc-src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ"
+          data-tc-category="marketing"
+          title="Big Buck Bunny"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="demo-footer">
+    <div class="demo-wrap">
+      <span>Tiny Consent demo</span>
+      <a href="#" data-tc-element="open-preferences">Cookie settings</a>
+    </div>
+  </footer>
+
+  <!--
+    Tiny Consent component. Same tree as the Webflow component:
+    keep the data-tc attributes and keep everything inside [data-tc="root"].
+    Classes, copy, order of buttons, and styling are yours.
+  -->
+  <div class="tc-root" data-tc="root">
+    <div class="tc-banner" data-tc="banner" role="dialog" aria-labelledby="tc-banner-title" aria-describedby="tc-banner-text">
+      <div class="tc-banner_body">
+        <div class="tc-brand">
+          <span class="tc-brand_mark" aria-hidden="true"></span>
+          <h2 class="tc-title" id="tc-banner-title">We use cookies</h2>
+        </div>
+        <p class="tc-text" id="tc-banner-text">
+          Essential cookies keep the site working. With your permission we also use analytics and marketing cookies.
+        </p>
+        <a href="#" class="tc-link">Privacy policy</a>
+      </div>
+      <div class="tc-actions">
+        <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all">Reject all</button>
+        <button type="button" class="tc-button tc-button--ghost" data-tc-action="open-preferences">Preferences</button>
+        <button type="button" class="tc-button" data-tc-action="accept-all">Accept all</button>
+      </div>
+    </div>
+
+    <div class="tc-preferences" data-tc="preferences">
+      <div class="tc-backdrop" data-tc-action="close"></div>
+      <div class="tc-dialog" role="dialog" aria-modal="true" aria-labelledby="tc-prefs-title">
+        <button type="button" class="tc-close" data-tc-action="close" aria-label="Close">&times;</button>
+        <h2 class="tc-title" id="tc-prefs-title">Cookie preferences</h2>
+        <p class="tc-text">Choose which cookies you allow. You can change this at any time from the footer.</p>
+
+        <!--
+          One row per category. The row is an accordion: the chevron toggles the vendor list
+          (data-tc-element="details"). Each vendor is a nested accordion with its cookie table.
+          Vendors and cookies are sample content; replace them with what your site really uses.
+        -->
+        <form class="tc-form">
+          <div class="tc-row" data-tc-category="essential" data-tc-element="accordion">
+            <div class="tc-row_head">
+              <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show details">
+                <span class="tc-chevron_icon" aria-hidden="true"></span>
+              </div>
+              <div class="tc-row_check">
+                <span class="tc-badge">Always active</span>
+                <span class="tc-row_title">Essential</span>
+              </div>
+            </div>
+            <p class="tc-row_desc">Required for the site to work. Always on.</p>
+            <div class="tc-row_body" data-tc-element="details">
+              <div class="tc-vendor" data-tc-element="accordion">
+                <div class="tc-vendor_head">
+                  <div class="tc-vendor_text">
+                    <div class="tc-vendor_name">Tiny Consent</div>
+                    <a href="#" class="tc-vendor_link">Privacy policy</a>
+                  </div>
+                  <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show cookies">
+                    <span class="tc-chevron_icon" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="tc-vendor_body" data-tc-element="details">
+                  <div class="tc-cookie">
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Name</span><span class="tc-cookie_val">tc_consent</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Purpose</span><span class="tc-cookie_val">Stores the cookie choices you make here.</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Duration</span><span class="tc-cookie_val">180 days</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tc-row" data-tc-category="analytics" data-tc-element="accordion">
+            <div class="tc-row_head">
+              <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show details">
+                <span class="tc-chevron_icon" aria-hidden="true"></span>
+              </div>
+              <label class="tc-row_check">
+                <input type="checkbox" class="tc-checkbox" name="Analytics" />
+                <span class="tc-row_title">Analytics</span>
+              </label>
+            </div>
+            <p class="tc-row_desc">Help us understand how the site is used.</p>
+            <div class="tc-row_body" data-tc-element="details">
+              <div class="tc-vendor" data-tc-element="accordion">
+                <div class="tc-vendor_head">
+                  <div class="tc-vendor_text">
+                    <div class="tc-vendor_name">Google Analytics</div>
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                  </div>
+                  <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show cookies">
+                    <span class="tc-chevron_icon" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="tc-vendor_body" data-tc-element="details">
+                  <div class="tc-cookie">
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Name</span><span class="tc-cookie_val">_ga, _ga_*</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Purpose</span><span class="tc-cookie_val">Tells returning visitors and sessions apart.</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Duration</span><span class="tc-cookie_val">2 years</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tc-row" data-tc-category="marketing" data-tc-element="accordion">
+            <div class="tc-row_head">
+              <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show details">
+                <span class="tc-chevron_icon" aria-hidden="true"></span>
+              </div>
+              <label class="tc-row_check">
+                <input type="checkbox" class="tc-checkbox" name="Marketing" />
+                <span class="tc-row_title">Marketing</span>
+              </label>
+            </div>
+            <p class="tc-row_desc">Ads, pixels, and embedded media from third parties.</p>
+            <div class="tc-row_body" data-tc-element="details">
+              <div class="tc-vendor" data-tc-element="accordion">
+                <div class="tc-vendor_head">
+                  <div class="tc-vendor_text">
+                    <div class="tc-vendor_name">Meta Pixel</div>
+                    <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                  </div>
+                  <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show cookies">
+                    <span class="tc-chevron_icon" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="tc-vendor_body" data-tc-element="details">
+                  <div class="tc-cookie">
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Name</span><span class="tc-cookie_val">_fbp</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Purpose</span><span class="tc-cookie_val">Attributes conversions back to Meta ads.</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Duration</span><span class="tc-cookie_val">90 days</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tc-vendor" data-tc-element="accordion">
+                <div class="tc-vendor_head">
+                  <div class="tc-vendor_text">
+                    <div class="tc-vendor_name">YouTube</div>
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                  </div>
+                  <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show cookies">
+                    <span class="tc-chevron_icon" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="tc-vendor_body" data-tc-element="details">
+                  <div class="tc-cookie">
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Name</span><span class="tc-cookie_val">VISITOR_INFO1_LIVE, YSC</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Purpose</span><span class="tc-cookie_val">Set by embedded videos to measure playback.</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Duration</span><span class="tc-cookie_val">Session to 6 months</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tc-row" data-tc-category="personalization" data-tc-element="accordion">
+            <div class="tc-row_head">
+              <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show details">
+                <span class="tc-chevron_icon" aria-hidden="true"></span>
+              </div>
+              <label class="tc-row_check">
+                <input type="checkbox" class="tc-checkbox" name="Personalization" />
+                <span class="tc-row_title">Personalization</span>
+              </label>
+            </div>
+            <p class="tc-row_desc">Remember your choices and tailor content.</p>
+            <div class="tc-row_body" data-tc-element="details">
+              <div class="tc-vendor" data-tc-element="accordion">
+                <div class="tc-vendor_head">
+                  <div class="tc-vendor_text">
+                    <div class="tc-vendor_name">Intercom</div>
+                    <a href="https://www.intercom.com/legal/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                  </div>
+                  <div class="tc-chevron" data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0" aria-label="Show cookies">
+                    <span class="tc-chevron_icon" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="tc-vendor_body" data-tc-element="details">
+                  <div class="tc-cookie">
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Name</span><span class="tc-cookie_val">intercom-id-*, intercom-session-*</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Purpose</span><span class="tc-cookie_val">Keeps your chat history across visits.</span></div>
+                    <div class="tc-cookie_row"><span class="tc-cookie_key">Duration</span><span class="tc-cookie_val">9 months</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div class="tc-actions">
+          <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all">Reject all</button>
+          <button type="button" class="tc-button tc-button--ghost" data-tc-action="save">Save selection</button>
+          <button type="button" class="tc-button" data-tc-action="accept-all">Accept all</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persistent entry point, bottom-left. The script shows it once a choice exists and no panel is open. -->
+    <div class="tc-float" data-tc="float" data-tc-action="open-preferences" role="button" tabindex="0" aria-label="Open cookie preferences">
+      <span class="tc-float_mark" aria-hidden="true"></span>
+      <span class="tc-float_label">Preferences</span>
+    </div>
+  </div>
+
+  <script src="./demo.js"></script>
+</body>
+</html>

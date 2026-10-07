@@ -24,11 +24,18 @@ import { bindUI } from './ui.js';
 
 const VERSION = '0.1.0';
 
+// Injected only when the script runs, so the Designer canvas shows everything.
 const BOOT_CSS = [
   'html.tc-boot [data-tc="root"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="banner"]:not([data-tc-visible="true"]),',
-  'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"])',
+  'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"]),',
+  'html.tc-boot [data-tc="float"]:not([data-tc-visible="true"]),',
+  'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"]',
   '{display:none!important}',
+  'html.tc-boot [data-tc-element="chevron"]{transition:transform 150ms ease}',
+  'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>[data-tc-element="chevron"],',
+  'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>:not([data-tc-element="details"]) [data-tc-element="chevron"]',
+  '{transform:rotate(180deg)}',
 ].join('');
 
 function readConfig(script) {

@@ -4,19 +4,26 @@
 //   [data-tc="root"]           wraps everything below
 //   [data-tc="banner"]         first-visit banner
 //   [data-tc="preferences"]    category panel
+//   [data-tc="float"]          persistent "Preferences" button, shown once a choice exists
 //   [data-tc-category="…"]     row (or input) for one category inside the panel
-//   [data-tc-action="…"]       accept-all | reject-all | open-preferences | save | close
+//   [data-tc-action="…"]       accept-all | reject-all | open-preferences | save | close | toggle
 //   [data-tc-element="open-preferences"]  any element anywhere, e.g. a footer link
+//   [data-tc-element="accordion"]         collapsible box; `toggle` inside it flips data-tc-open
+//   [data-tc-element="details"]           the part of an accordion that is hidden while closed
+//   [data-tc-element="chevron"]           rotates 180° while its accordion is open
 
 import { isAllowed } from './consent.js';
 
 const FOCUSABLE = 'button, [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+const ACTIONABLE = '[data-tc-action], [data-tc-element="open-preferences"]';
 
 export function bindUI(doc, handlers) {
   const root = doc.querySelector('[data-tc="root"]');
   const banner = root ? root.querySelector('[data-tc="banner"]') : null;
   const prefs = root ? root.querySelector('[data-tc="preferences"]') : null;
+  const float = root ? root.querySelector('[data-tc="float"]') : null;
   let lastFocus = null;
+  let chosen = false;
 
   function isVisible(el) {
     return Boolean(el) && el.getAttribute('data-tc-visible') === 'true';
@@ -29,7 +36,9 @@ export function bindUI(doc, handlers) {
   }
 
   function update() {
-    setVisible(root, isVisible(banner) || isVisible(prefs));
+    const panelsOpen = isVisible(banner) || isVisible(prefs);
+    setVisible(float, chosen && !panelsOpen);
+    setVisible(root, panelsOpen || isVisible(float));
   }
 
   function focusFirst(el) {
@@ -70,8 +79,9 @@ export function bindUI(doc, handlers) {
     return out;
   }
 
-  /** Reflects consent into the checkboxes. Essential stays checked and disabled. */
+  /** Reflects consent into the checkboxes and the float button. Essential stays checked and disabled. */
   function sync(consent) {
+    chosen = Boolean(consent && consent.chosen);
     for (const { category, input } of rows()) {
       input.checked = isAllowed(consent, category);
       if (category === 'essential') {
@@ -79,6 +89,7 @@ export function bindUI(doc, handlers) {
         input.disabled = true;
       }
     }
+    update();
   }
 
   /** Reads the checkboxes into `{ analytics: bool, … }`. */
@@ -90,11 +101,15 @@ export function bindUI(doc, handlers) {
     return out;
   }
 
-  doc.addEventListener('click', (event) => {
-    const target = event.target && event.target.closest
-      ? event.target.closest('[data-tc-action], [data-tc-element="open-preferences"]')
-      : null;
-    if (!target) return;
+  function toggle(target) {
+    const box = target.closest('[data-tc-element="accordion"]');
+    if (!box) return;
+    const open = box.getAttribute('data-tc-open') !== 'true';
+    box.setAttribute('data-tc-open', open ? 'true' : 'false');
+    target.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function run(target, event) {
     const action = target.getAttribute('data-tc-action') || 'open-preferences';
     if (target.tagName === 'A' || target.closest('form')) event.preventDefault();
 
@@ -114,9 +129,21 @@ export function bindUI(doc, handlers) {
       case 'close':
         handlers.close();
         break;
+      case 'toggle':
+        toggle(target);
+        break;
       default:
         break;
     }
+  }
+
+  doc.addEventListener('click', (event) => {
+    const target = event.target && event.target.closest ? event.target.closest(ACTIONABLE) : null;
+    if (!target) return;
+    // A real link inside an action area (privacy policy inside a toggle header) keeps working.
+    const link = event.target.closest('a[href]');
+    if (link && link !== target && target.contains(link)) return;
+    run(target, event);
   });
 
   // Webflow checkboxes live inside a Form Block. Keep it from submitting.
@@ -125,8 +152,16 @@ export function bindUI(doc, handlers) {
   });
 
   doc.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && isVisible(prefs)) handlers.close();
+    if (event.key === 'Escape' && isVisible(prefs)) {
+      handlers.close();
+      return;
+    }
+    // Divs with role="button" (Webflow has no button element outside forms) act on Enter and Space.
+    if ((event.key === 'Enter' || event.key === ' ') && event.target && event.target.matches) {
+      const target = event.target.matches(ACTIONABLE) && event.target.getAttribute('role') === 'button' ? event.target : null;
+      if (target && target.tagName !== 'BUTTON' && target.tagName !== 'A') run(target, event);
+    }
   });
 
-  return { root, banner, prefs, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read };
+  return { root, banner, prefs, float, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read };
 }

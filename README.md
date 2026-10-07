@@ -11,7 +11,10 @@ A small first-party cookie consent kit for Webflow projects. One static script b
 
 - `src/` script source (`tiny-consent.js` entry, `consent.js`, `blocker.js`, `ui.js`, `blocklist.js`)
 - `dist/` built bundle to host (`tiny-consent.js`, `tiny-consent.min.js`)
-- `demo/` reference page with the exact component tree and a CSS-variable theme
+- `demo/index.html` onboarding docs: every step below with copy buttons, a head-code configurator, and **Copy component for Webflow**
+- `demo/preview.html` the live component with the exact tree, brand presets, and a tag status panel
+- `demo/webflow-paste.js` turns the preview component and `tiny-consent-theme.css` into a Webflow clipboard payload
+- `demo/clipboard-inspector.html` shows what any clipboard holds, for checking the Webflow format
 - `test/` Vitest suite
 
 ```sh
@@ -20,6 +23,8 @@ npm run build   # dist/tiny-consent.js + dist/tiny-consent.min.js
 npm run dev     # http://localhost:8787/demo/ with rebuild on change
 npm test
 ```
+
+The docs page is the shortest path: open `npm run dev`, follow the six steps, and use the copy buttons.
 
 ## 1. Host the script once
 
@@ -77,44 +82,62 @@ Remove `<noscript>` fallbacks from tracker snippets. They fire without consent.
 
 ## 4. Build the component in Webflow
 
-Build it once on a library source site, then share it. The script finds elements by attribute, so names, classes, copy, order of buttons, and interactions are free.
+### Paste it
+
+On the docs page (`npm run dev`, step 4) press **Copy component for Webflow**. The clipboard then holds the component in Webflow's own clipboard format (`@webflow/XscpData`): native Div, Heading, Paragraph, Button, and Checkbox elements, one class per element with the default theme values, and all `data-tc` attributes set. In the Designer, select the footer (or any component that is on every page), enter the component, and paste.
+
+The payload is generated from `demo/preview.html` plus `demo/tiny-consent-theme.css`, so it always matches the preview. During generation `var()` becomes the default value, `color-mix()` becomes `rgba()`, `:hover` becomes the Hover state, and the `max-width: 560px` media query becomes the Tablet/Mobile breakpoint. After pasting, swap the flat colors for your site's variables.
+
+If nothing appears, open `demo/clipboard-inspector.html`, copy an element in the Designer, and paste into the inspector to see the exact MIME type and shape Webflow currently uses. **Copy as HTML embed** is the fallback: paste into a Code Embed element. Works instantly, not styleable in the Designer.
+
+### Or build it by hand
+
+The script finds elements by attribute, so names, classes, copy, order of buttons, and interactions are free.
 
 ```
-Div                 data-tc="root"                 position fixed, inset 0, pointer-events none, z-index 9999
-├─ Div              data-tc="banner"               pointer-events auto; absolute bottom-left (or any placement)
-│  ├─ Image         optional logo
-│  ├─ Heading       "We use cookies"
-│  ├─ Paragraph     description + link to the privacy page
+Div                 data-tc="root"                 position relative, z-index 9999 (zero-size anchor)
+├─ Div              data-tc="banner"               position fixed, bottom-right (or any placement)
+│  ├─ Div           brand row: mark + Heading "We use cookies"
+│  ├─ Paragraph     description
+│  ├─ Text link     privacy policy
 │  └─ Div           actions
 │     ├─ Button     data-tc-action="reject-all"
 │     ├─ Button     data-tc-action="open-preferences"
 │     └─ Button     data-tc-action="accept-all"
-└─ Div              data-tc="preferences"          pointer-events auto; absolute inset 0, centered
-   ├─ Div           backdrop, data-tc-action="close"
-   └─ Div           dialog
-      ├─ Button     data-tc-action="close"         the X
-      ├─ Heading / Paragraph
-      ├─ Form Block (Webflow checkboxes need one)
-      │  ├─ Checkbox field   data-tc-category="essential"        checked, disabled
-      │  ├─ Checkbox field   data-tc-category="analytics"
-      │  ├─ Checkbox field   data-tc-category="marketing"
-      │  └─ Checkbox field   data-tc-category="personalization"
-      └─ Div           actions
-         ├─ Button     data-tc-action="reject-all"
-         ├─ Button     data-tc-action="save"
-         └─ Button     data-tc-action="accept-all"
+├─ Div              data-tc="preferences"          position fixed, inset 0, centered
+│  ├─ Div           backdrop, data-tc-action="close"
+│  └─ Div           dialog
+│     ├─ Button     data-tc-action="close"         the X
+│     ├─ Heading / Paragraph
+│     ├─ Form Block (Webflow checkboxes need one)
+│     │  └─ Div     data-tc-category="analytics" data-tc-element="accordion"     one row per category
+│     │     ├─ Div  head
+│     │     │  ├─ Div   data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0"
+│     │     │  └─ Checkbox field (label > input + label text)   Essential: a Div with a badge instead
+│     │     ├─ Paragraph  description
+│     │     └─ Div  data-tc-element="details"      vendor list, hidden until the chevron opens it
+│     │        └─ Div   data-tc-element="accordion"             one per vendor
+│     │           ├─ Div   head: vendor name, privacy link, chevron (same attributes as above)
+│     │           └─ Div   data-tc-element="details"             cookie table: name, purpose, duration
+│     └─ Div           actions
+│        ├─ Button     data-tc-action="reject-all"
+│        ├─ Button     data-tc-action="save"
+│        └─ Button     data-tc-action="accept-all"
+└─ Div              data-tc="float" data-tc-action="open-preferences" role="button" tabindex="0"
+                                                   position fixed, bottom-left; shown once a choice exists
 ```
 
 Rules:
 
 - Keep every element inside `data-tc="root"` and keep the attributes. Everything else is yours.
-- Set attributes in Element settings → Custom attributes. For Webflow checkbox fields, put `data-tc-category` on the checkbox wrapper (the label); the script finds the input inside.
-- Add `data-tc-element="open-preferences"` to a footer link so visitors can change their choice from any page.
+- Set attributes in Element settings → Custom attributes. Put `data-tc-category` on the row Div around each Checkbox field; the script finds the input inside. A row without a checkbox (Essential) is display only.
+- Accordions: any `data-tc-action="toggle"` flips `data-tc-open` on its nearest `data-tc-element="accordion"`; the script hides that accordion's `data-tc-element="details"` while closed and rotates its `data-tc-element="chevron"` while open. Nest them as deep as you like. In the Designer everything is expanded; on the published site everything starts closed.
+- The `data-tc="float"` button is hidden while the banner or the panel is open and until the visitor has made a choice. A footer link with `data-tc-element="open-preferences"` still works if you prefer that, or want both.
 - Use `button` elements (Button or Link Block with `type="button"`) inside the Form Block. The script also cancels form submission inside the component.
 - Put the component in a symbol that already sits on every page (navbar or footer component). Webflow has no API that injects a component site-wide.
-- Leave the banner visible in the Designer. On the published site the script hides it until it is needed, so there is no flash and you can still see it while designing. If you want to design the preferences panel, toggle its display in the Designer and set it back before publishing.
+- Leave the banner visible in the Designer. On the published site the script hides it until it is needed, so there is no flash and you can still see it while designing. Hide the preferences panel and the float button while you work and set them back before publishing.
 
-`demo/index.html` is the same tree in plain HTML. Use it as the reference when building the Webflow version.
+`demo/preview.html` is the same tree in plain HTML. Use it as the reference when building the Webflow version.
 
 ### Visible names
 

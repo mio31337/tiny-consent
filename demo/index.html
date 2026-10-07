@@ -3,192 +3,284 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tiny Consent demo</title>
-
-  <!-- 1. Tiny Consent first, synchronous, before every tracker. -->
-  <script src="../dist/tiny-consent.js" data-tc-mode="opt-in" data-tc-cookie-days="180" data-tc-block="cdn.demo-tracker.test:analytics"></script>
-
-  <!-- Demo helper (essential): collects events for the status panel. -->
-  <script>
-    window.__demoEvents = [];
-    window.__demoLog = function (message) {
-      window.__demoEvents.push({ at: new Date(), message: message });
-      document.dispatchEvent(new CustomEvent('demo:log'));
-    };
-  </script>
-
-  <!-- 2a. Marked inline tracker: waits for the analytics category. -->
-  <script type="text/plain" data-tc-category="analytics">
-    window.__demoLog('Marked inline analytics script executed');
-  </script>
-
-  <!-- 2b. Unmarked tracker on a known host: auto-blocked by hostname. -->
-  <script src="https://www.googletagmanager.com/gtag/js?id=G-DEMO"></script>
-
-  <!-- 2c. Marked external tracker that needs two categories. -->
-  <script type="text/plain" data-tc-src="./tracker.js" data-tc-category="analytics, marketing"></script>
-
-  <link rel="stylesheet" href="./demo.css" />
+  <title>Tiny Consent for Webflow</title>
   <link rel="stylesheet" href="./tiny-consent-theme.css" />
+  <link rel="stylesheet" href="./demo.css" />
+  <link rel="stylesheet" href="./docs.css" />
 </head>
 <body>
   <header class="demo-header">
     <div class="demo-wrap">
-      <a class="demo-logo" href="#">Tiny Consent</a>
+      <a class="demo-logo" href="./">Tiny Consent</a>
       <nav class="demo-nav">
-        <a href="#status">Status</a>
-        <a href="#embeds">Embeds</a>
-        <a href="#" data-tc-element="open-preferences">Cookie settings</a>
+        <a href="#host">Host</a>
+        <a href="#head">Head code</a>
+        <a href="#trackers">Trackers</a>
+        <a href="#component">Component</a>
+        <a href="#publish">Publish</a>
+        <a href="./preview.html">Preview</a>
       </nav>
     </div>
   </header>
 
   <main class="demo-wrap">
-    <section class="demo-hero">
-      <p class="demo-eyebrow">Reference page for the Webflow component</p>
+    <section class="demo-hero doc-hero">
+      <p class="demo-eyebrow">Cookie consent for Webflow</p>
       <h1>One script, one component, every Webflow project.</h1>
       <p class="demo-lede">
-        The banner and the preferences panel below are plain HTML with the same <code>data-tc</code> attributes you add in
-        the Designer. Everything visual comes from the CSS variables in <code>tiny-consent-theme.css</code>. Switch a brand
-        to see the same component restyled.
+        A small first-party consent script plus a native Webflow component you restyle per client. No account, no per-site
+        plan. Five steps from zero to a compliant banner.
       </p>
-      <div class="demo-brands" role="group" aria-label="Brand presets">
-        <button type="button" class="demo-chip is-active" data-brand="">Default</button>
-        <button type="button" class="demo-chip" data-brand="brand-forest">Forest</button>
-        <button type="button" class="demo-chip" data-brand="brand-night">Night</button>
-        <button type="button" class="demo-chip" data-brand="brand-coral">Coral</button>
+      <div class="demo-actions">
+        <a class="demo-btn" href="#component">Copy the component</a>
+        <a class="demo-btn demo-btn--ghost" href="./preview.html">Open the live preview</a>
       </div>
     </section>
 
-    <section id="status" class="demo-grid">
-      <div class="demo-card">
-        <h2>Consent</h2>
-        <pre id="consent-json" class="demo-pre">…</pre>
-        <div class="demo-actions">
-          <button type="button" class="demo-btn" data-tc-element="open-preferences">Open preferences</button>
-          <button type="button" class="demo-btn demo-btn--ghost" id="reset">Reset and show banner</button>
+    <ol class="doc-steps">
+
+      <!-- Step 1 -->
+      <li class="doc-step" id="host">
+        <div class="doc-step_head">
+          <span class="doc-step_num">1</span>
+          <h2>Host the script once</h2>
+        </div>
+        <p>
+          Webflow cannot host <code>.js</code> files, so the bundle needs a static URL. Every site points at the same URL;
+          rebuild and push to update them all. Fastest route: push this repo to GitHub and let jsDelivr serve
+          <code>dist/tiny-consent.min.js</code>.
+        </p>
+        <div class="doc-code">
+          <pre><code id="cdn-example">https://cdn.jsdelivr.net/gh/&lt;your-user&gt;/tiny-consent@main/dist/tiny-consent.min.js</code></pre>
+          <button type="button" class="doc-copy" data-copy="#cdn-example">Copy</button>
+        </div>
+        <p class="doc-note">Cloudflare Pages, Netlify (drag the <code>dist</code> folder in), or any host you already run works the same.</p>
+      </li>
+
+      <!-- Step 2 -->
+      <li class="doc-step" id="head">
+        <div class="doc-step_head">
+          <span class="doc-step_num">2</span>
+          <h2>Add the head code</h2>
+        </div>
+        <p>
+          Site settings → Custom code → <strong>Head code</strong>. Paste this as the first thing, above every analytics or
+          pixel snippet, with no <code>async</code> or <code>defer</code>. Fill in your values and copy.
+        </p>
+        <form class="doc-config" id="config">
+          <label>
+            <span>Script URL</span>
+            <input type="url" name="url" value="https://cdn.jsdelivr.net/gh/your-user/tiny-consent@main/dist/tiny-consent.min.js" />
+          </label>
+          <label>
+            <span>Mode</span>
+            <select name="mode">
+              <option value="opt-in">opt-in (GDPR: nothing optional runs until accepted)</option>
+              <option value="opt-out">opt-out (CCPA: everything runs until rejected)</option>
+            </select>
+          </label>
+          <label>
+            <span>Cookie lifetime (days)</span>
+            <input type="number" name="days" value="180" min="1" max="730" />
+          </label>
+          <label>
+            <span>Extra hosts to block <small>optional, <code>host:category</code>, comma separated</small></span>
+            <input type="text" name="block" placeholder="cdn.example.com:analytics, pixel.example.com" />
+          </label>
+        </form>
+        <div class="doc-code">
+          <pre><code id="head-snippet"></code></pre>
+          <button type="button" class="doc-copy" data-copy="#head-snippet">Copy</button>
+        </div>
+        <p class="doc-note">
+          Use site-level head code, not page settings, so the script runs on every page. Tags added under
+          <strong>Apps &amp; Integrations</strong> (the Google Analytics and Facebook Pixel fields) load before custom code
+          and cannot be blocked; paste those snippets into Head code instead.
+        </p>
+      </li>
+
+      <!-- Step 3 -->
+      <li class="doc-step" id="trackers">
+        <div class="doc-step_head">
+          <span class="doc-step_num">3</span>
+          <h2>Put trackers behind consent</h2>
+        </div>
+        <p>
+          Categories are <code>essential</code>, <code>analytics</code>, <code>marketing</code>, and
+          <code>personalization</code>. Essential always runs. For each tracker: set <code>type="text/plain"</code>, move
+          <code>src</code> to <code>data-tc-src</code>, add the category.
+        </p>
+        <div class="doc-code">
+          <pre><code id="gtag-snippet">&lt;script type="text/plain" data-tc-src="https://www.googletagmanager.com/gtag/js?id=G-XXXX" data-tc-category="analytics"&gt;&lt;/script&gt;
+&lt;script type="text/plain" data-tc-category="analytics"&gt;
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XXXX');
+&lt;/script&gt;</code></pre>
+          <button type="button" class="doc-copy" data-copy="#gtag-snippet">Copy</button>
+        </div>
+        <p>
+          Embeds (YouTube, Vimeo, Google Maps) go in a Code Embed element with <code>data-tc-src</code> instead of
+          <code>src</code>. An optional placeholder with the same category disappears once it is allowed.
+        </p>
+        <div class="doc-code">
+          <pre><code id="iframe-snippet">&lt;div data-tc-element="placeholder" data-tc-category="marketing"&gt;
+  This video loads after you allow marketing cookies.
+  &lt;a href="#" data-tc-element="open-preferences"&gt;Cookie settings&lt;/a&gt;
+&lt;/div&gt;
+&lt;iframe data-tc-src="https://www.youtube-nocookie.com/embed/VIDEO_ID" data-tc-category="marketing" allowfullscreen&gt;&lt;/iframe&gt;</code></pre>
+          <button type="button" class="doc-copy" data-copy="#iframe-snippet">Copy</button>
+        </div>
+        <p class="doc-note">
+          Scripts from known tracker hosts (Google Analytics, GTM, Meta, Hotjar, LinkedIn, TikTok, HubSpot, YouTube,
+          Intercom, and more) are blocked even when untagged, including ones injected later by other scripts. A tag that
+          lists two categories (<code>data-tc-category="analytics, marketing"</code>) runs only when both are allowed.
+          Remove <code>&lt;noscript&gt;</code> fallbacks from tracker snippets; they fire without consent.
+        </p>
+      </li>
+
+      <!-- Step 4 -->
+      <li class="doc-step" id="component">
+        <div class="doc-step_head">
+          <span class="doc-step_num">4</span>
+          <h2>Paste the component into the Designer</h2>
+        </div>
+        <p>
+          The button below puts the banner and preferences panel on your clipboard in Webflow's own format: native
+          elements, classes with the default theme, and all <code>data-tc</code> attributes already set. Nothing is an
+          embed, so the Style panel works on every part.
+        </p>
+        <div class="doc-paste">
+          <button type="button" class="demo-btn doc-paste_btn" id="copy-webflow" disabled>Copy component for Webflow</button>
+          <button type="button" class="demo-btn demo-btn--ghost" id="copy-embed" disabled>Copy as HTML embed</button>
+          <span class="doc-paste_status" id="paste-status">Preparing the payload…</span>
+        </div>
+        <ol class="doc-list">
+          <li>Open your site in the Designer and select the <strong>footer</strong> (or any component that is already on every page). Edit the component so the paste lands inside it.</li>
+          <li>Press <kbd>Cmd</kbd>+<kbd>V</kbd> (<kbd>Ctrl</kbd>+<kbd>V</kbd> on Windows). A <code>tc-root</code> div appears with three parts: the banner (bottom-right), the preferences panel, and a small <strong>Preferences</strong> button (bottom-left) that the script shows once a visitor has made a choice.</li>
+          <li>Colors and fonts arrive as flat values from the default theme. Select <code>tc-banner</code>, <code>tc-dialog</code>, <code>tc-button</code>, and <code>tc-float</code> and swap them for your site's variables. Then style anything else; names, copy, and layout are free.</li>
+          <li>Each category row is an accordion. The chevron opens a list of vendors; each vendor opens its cookie table (name, purpose, duration). The vendors in the paste are samples. Replace them with what the site really uses, duplicate a <code>tc-vendor</code> div for each extra one, and give every Privacy policy link its real URL.</li>
+          <li>Leave the banner visible in the Designer. On the published site the script hides it until it is needed. Hide the preferences panel and the Preferences button while you work and set them back to visible before publishing. Accordion bodies are open in the Designer and start closed on the published site.</li>
+        </ol>
+        <details class="doc-details">
+          <summary>What the attributes do (do not remove these)</summary>
+          <table class="demo-table">
+            <thead><tr><th>Attribute</th><th>Where</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>data-tc="root"</code></td><td>wrapper div</td><td>Everything must stay inside it.</td></tr>
+              <tr><td><code>data-tc="banner"</code></td><td>banner div</td><td>Shown on first visit.</td></tr>
+              <tr><td><code>data-tc="preferences"</code></td><td>panel div</td><td>Category panel. Hidden until opened.</td></tr>
+              <tr><td><code>data-tc="float"</code></td><td>small button div</td><td>Persistent "Preferences" button. Shown after a choice, hidden while the banner or panel is open.</td></tr>
+              <tr><td><code>data-tc-action="accept-all"</code></td><td>button</td><td>Allow every category.</td></tr>
+              <tr><td><code>data-tc-action="reject-all"</code></td><td>button</td><td>Deny every optional category.</td></tr>
+              <tr><td><code>data-tc-action="open-preferences"</code></td><td>button</td><td>Open the panel.</td></tr>
+              <tr><td><code>data-tc-action="save"</code></td><td>button</td><td>Store the checkbox selection.</td></tr>
+              <tr><td><code>data-tc-action="close"</code></td><td>button, backdrop</td><td>Close the panel.</td></tr>
+              <tr><td><code>data-tc-action="toggle"</code></td><td>chevron div</td><td>Opens and closes the accordion it sits in. Add <code>role="button"</code> and <code>tabindex="0"</code> for keyboard users.</td></tr>
+              <tr><td><code>data-tc-category="…"</code></td><td>row div around each checkbox</td><td>Which category the checkbox controls. The visible label text is yours to change. The Essential row has no checkbox, only a badge.</td></tr>
+              <tr><td><code>data-tc-element="accordion"</code></td><td>row div, vendor div</td><td>A collapsible box. The script sets <code>data-tc-open</code> on it.</td></tr>
+              <tr><td><code>data-tc-element="details"</code></td><td>div inside an accordion</td><td>Hidden while the accordion is closed.</td></tr>
+              <tr><td><code>data-tc-element="chevron"</code></td><td>the toggle div</td><td>Rotates 180° while its accordion is open.</td></tr>
+            </tbody>
+          </table>
+        </details>
+        <details class="doc-details">
+          <summary>If the paste does nothing</summary>
+          <p>
+            Webflow reads a specific clipboard format and changes it from time to time. Open the
+            <a href="./clipboard-inspector.html">clipboard inspector</a>, copy any element inside the Designer, and paste
+            there to see the exact MIME type and payload shape the Designer currently uses. Compare it with what this page
+            produces (the inspector shows that too). The <strong>Copy as HTML embed</strong> button is the fallback: paste
+            it into a Code Embed element. It works immediately, but the result is not styleable in the Designer.
+          </p>
+        </details>
+      </li>
+
+      <!-- Step 5 -->
+      <li class="doc-step" id="footer-link">
+        <div class="doc-step_head">
+          <span class="doc-step_num">5</span>
+          <h2>Add a "Cookie settings" link</h2>
+        </div>
+        <p>
+          Visitors must be able to change their mind from any page. The component's Preferences button already covers
+          that. If you would rather have a plain footer link (or both), add a text link and give it one custom attribute.
+          Element settings → Custom attributes:
+        </p>
+        <div class="doc-code">
+          <pre><code id="footer-snippet">data-tc-element = open-preferences</code></pre>
+          <button type="button" class="doc-copy" data-copy="#footer-snippet">Copy</button>
+        </div>
+      </li>
+
+      <!-- Step 6 -->
+      <li class="doc-step" id="publish">
+        <div class="doc-step_head">
+          <span class="doc-step_num">6</span>
+          <h2>Publish and test</h2>
+        </div>
+        <p>Publish to the <code>.webflow.io</code> staging domain first and open it in a private window.</p>
+        <ul class="doc-list">
+          <li>The banner shows and the Network tab lists no tracker requests.</li>
+          <li>After Accept all, trackers load, a <code>tc_consent</code> cookie exists, and the Preferences button appears bottom-left.</li>
+          <li>Reload: no banner, trackers load straight away, Preferences button still there.</li>
+          <li>Open preferences from that button, expand a row and a vendor, then Reject all: the page reloads with everything blocked.</li>
+          <li>On a phone-sized viewport the banner spans the width and the buttons stack.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <section class="doc-ref" id="api">
+      <h2>Script options, API, events</h2>
+      <div class="doc-ref_grid">
+        <div>
+          <h3>Script tag attributes</h3>
+          <table class="demo-table">
+            <tbody>
+              <tr><td><code>data-tc-mode</code></td><td><code>opt-in</code> (default) or <code>opt-out</code></td></tr>
+              <tr><td><code>data-tc-cookie-days</code></td><td>Cookie lifetime, default 180</td></tr>
+              <tr><td><code>data-tc-block</code></td><td>Extra hosts, <code>host[:category]</code>. <code>:essential</code> lets a host through.</td></tr>
+              <tr><td><code>data-tc-reload</code></td><td>Reload when a category is withdrawn (default true)</td></tr>
+              <tr><td><code>data-tc-cookie-name</code></td><td>Default <code>tc_consent</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>JavaScript</h3>
+          <div class="doc-code">
+            <pre><code id="api-snippet">TinyConsent.getConsent()            // { chosen, analytics, marketing, personalization, t }
+TinyConsent.isAllowed('analytics')
+TinyConsent.setConsent({ analytics: true })
+TinyConsent.acceptAll() / rejectAll()
+TinyConsent.open() / close() / reset()
+
+document.addEventListener('tc:consent',  e =&gt; e.detail)
+document.addEventListener('tc:block',    e =&gt; e.detail.element)
+document.addEventListener('tc:activate', e =&gt; e.detail.element)</code></pre>
+            <button type="button" class="doc-copy" data-copy="#api-snippet">Copy</button>
+          </div>
         </div>
       </div>
-
-      <div class="demo-card">
-        <h2>Tags on this page</h2>
-        <table class="demo-table">
-          <thead>
-            <tr><th>Tag</th><th>Category</th><th>State</th></tr>
-          </thead>
-          <tbody id="tags"></tbody>
-        </table>
-        <div class="demo-actions">
-          <button type="button" class="demo-btn demo-btn--ghost" id="inject">Inject a marketing pixel dynamically</button>
-        </div>
-      </div>
-
-      <div class="demo-card demo-card--wide">
-        <h2>Event log</h2>
-        <ol id="log" class="demo-log"></ol>
-      </div>
-    </section>
-
-    <section id="embeds" class="demo-section">
-      <h2>Blocked embed with placeholder</h2>
-      <p>
-        The iframe keeps its URL in <code>data-tc-src</code>. The placeholder carries the same category and disappears when
-        that category is allowed.
+      <p class="doc-note">
+        Honors Global Privacy Control. Consent is a first-party cookie (<code>SameSite=Lax</code>, <code>Secure</code> on
+        https). This kit covers what runs on the site; which categories you need and what your policy says is still your
+        call, not legal advice.
       </p>
-      <div class="demo-embed">
-        <div class="demo-placeholder" data-tc-element="placeholder" data-tc-category="marketing">
-          <p>This video is blocked until you allow marketing cookies.</p>
-          <button type="button" class="demo-btn" data-tc-element="open-preferences">Review cookie settings</button>
-        </div>
-        <iframe
-          data-tc-src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ"
-          data-tc-category="marketing"
-          title="Big Buck Bunny"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-      </div>
     </section>
   </main>
 
   <footer class="demo-footer">
     <div class="demo-wrap">
-      <span>Tiny Consent demo</span>
-      <a href="#" data-tc-element="open-preferences">Cookie settings</a>
+      <span>Tiny Consent</span>
+      <nav class="demo-nav">
+        <a href="./preview.html">Preview</a>
+        <a href="./clipboard-inspector.html">Clipboard inspector</a>
+      </nav>
     </div>
   </footer>
 
-  <!--
-    Tiny Consent component. Same tree as the Webflow component:
-    keep the data-tc attributes and keep everything inside [data-tc="root"].
-    Classes, copy, order of buttons, and styling are yours.
-  -->
-  <div class="tc-root" data-tc="root">
-    <div class="tc-banner" data-tc="banner" role="dialog" aria-labelledby="tc-banner-title" aria-describedby="tc-banner-text">
-      <div class="tc-banner_body">
-        <div class="tc-brand">
-          <span class="tc-brand_mark" aria-hidden="true"></span>
-          <h2 class="tc-title" id="tc-banner-title">We use cookies</h2>
-        </div>
-        <p class="tc-text" id="tc-banner-text">
-          Essential cookies keep the site working. With your permission we also use analytics and marketing cookies.
-          Read the <a href="#" class="tc-link">privacy policy</a>.
-        </p>
-      </div>
-      <div class="tc-actions">
-        <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all">Reject all</button>
-        <button type="button" class="tc-button tc-button--ghost" data-tc-action="open-preferences">Preferences</button>
-        <button type="button" class="tc-button" data-tc-action="accept-all">Accept all</button>
-      </div>
-    </div>
-
-    <div class="tc-preferences" data-tc="preferences">
-      <div class="tc-backdrop" data-tc-action="close"></div>
-      <div class="tc-dialog" role="dialog" aria-modal="true" aria-labelledby="tc-prefs-title">
-        <button type="button" class="tc-close" data-tc-action="close" aria-label="Close">&times;</button>
-        <h2 class="tc-title" id="tc-prefs-title">Cookie preferences</h2>
-        <p class="tc-text">Choose which cookies you allow. You can change this at any time from the footer.</p>
-
-        <form class="tc-form">
-          <label class="tc-row" data-tc-category="essential">
-            <input type="checkbox" class="tc-checkbox" checked disabled />
-            <span class="tc-row_text">
-              <span class="tc-row_title">Essential</span>
-              <span class="tc-row_desc">Required for the site to work. Always on.</span>
-            </span>
-          </label>
-          <label class="tc-row" data-tc-category="analytics">
-            <input type="checkbox" class="tc-checkbox" />
-            <span class="tc-row_text">
-              <span class="tc-row_title">Analytics</span>
-              <span class="tc-row_desc">Help us understand how the site is used.</span>
-            </span>
-          </label>
-          <label class="tc-row" data-tc-category="marketing">
-            <input type="checkbox" class="tc-checkbox" />
-            <span class="tc-row_text">
-              <span class="tc-row_title">Marketing</span>
-              <span class="tc-row_desc">Ads, pixels, and embedded media from third parties.</span>
-            </span>
-          </label>
-          <label class="tc-row" data-tc-category="personalization">
-            <input type="checkbox" class="tc-checkbox" />
-            <span class="tc-row_text">
-              <span class="tc-row_title">Personalization</span>
-              <span class="tc-row_desc">Remember your choices and tailor content.</span>
-            </span>
-          </label>
-        </form>
-
-        <div class="tc-actions">
-          <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all">Reject all</button>
-          <button type="button" class="tc-button tc-button--ghost" data-tc-action="save">Save selection</button>
-          <button type="button" class="tc-button" data-tc-action="accept-all">Accept all</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="./demo.js"></script>
+  <script src="./webflow-paste.js"></script>
+  <script src="./docs.js"></script>
 </body>
 </html>

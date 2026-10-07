@@ -321,11 +321,14 @@
 
   // src/ui.js
   var FOCUSABLE = 'button, [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  var ACTIONABLE = '[data-tc-action], [data-tc-element="open-preferences"]';
   function bindUI(doc, handlers) {
     const root = doc.querySelector('[data-tc="root"]');
     const banner = root ? root.querySelector('[data-tc="banner"]') : null;
     const prefs = root ? root.querySelector('[data-tc="preferences"]') : null;
+    const float = root ? root.querySelector('[data-tc="float"]') : null;
     let lastFocus = null;
+    let chosen = false;
     function isVisible(el) {
       return Boolean(el) && el.getAttribute("data-tc-visible") === "true";
     }
@@ -335,7 +338,9 @@
       else el.removeAttribute("data-tc-visible");
     }
     function update() {
-      setVisible(root, isVisible(banner) || isVisible(prefs));
+      const panelsOpen = isVisible(banner) || isVisible(prefs);
+      setVisible(float, chosen && !panelsOpen);
+      setVisible(root, panelsOpen || isVisible(float));
     }
     function focusFirst(el) {
       const target = el && el.querySelector(FOCUSABLE);
@@ -371,6 +376,7 @@
       return out;
     }
     function sync(consent) {
+      chosen = Boolean(consent && consent.chosen);
       for (const { category, input } of rows()) {
         input.checked = isAllowed(consent, category);
         if (category === "essential") {
@@ -378,6 +384,7 @@
           input.disabled = true;
         }
       }
+      update();
     }
     function read() {
       const out = {};
@@ -386,9 +393,14 @@
       }
       return out;
     }
-    doc.addEventListener("click", (event) => {
-      const target = event.target && event.target.closest ? event.target.closest('[data-tc-action], [data-tc-element="open-preferences"]') : null;
-      if (!target) return;
+    function toggle(target) {
+      const box = target.closest('[data-tc-element="accordion"]');
+      if (!box) return;
+      const open = box.getAttribute("data-tc-open") !== "true";
+      box.setAttribute("data-tc-open", open ? "true" : "false");
+      target.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    function run(target, event) {
       const action = target.getAttribute("data-tc-action") || "open-preferences";
       if (target.tagName === "A" || target.closest("form")) event.preventDefault();
       switch (action) {
@@ -407,17 +419,34 @@
         case "close":
           handlers.close();
           break;
+        case "toggle":
+          toggle(target);
+          break;
         default:
           break;
       }
+    }
+    doc.addEventListener("click", (event) => {
+      const target = event.target && event.target.closest ? event.target.closest(ACTIONABLE) : null;
+      if (!target) return;
+      const link = event.target.closest("a[href]");
+      if (link && link !== target && target.contains(link)) return;
+      run(target, event);
     });
     doc.addEventListener("submit", (event) => {
       if (root && root.contains(event.target)) event.preventDefault();
     });
     doc.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && isVisible(prefs)) handlers.close();
+      if (event.key === "Escape" && isVisible(prefs)) {
+        handlers.close();
+        return;
+      }
+      if ((event.key === "Enter" || event.key === " ") && event.target && event.target.matches) {
+        const target = event.target.matches(ACTIONABLE) && event.target.getAttribute("role") === "button" ? event.target : null;
+        if (target && target.tagName !== "BUTTON" && target.tagName !== "A") run(target, event);
+      }
     });
-    return { root, banner, prefs, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read };
+    return { root, banner, prefs, float, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read };
   }
 
   // src/tiny-consent.js
@@ -425,8 +454,14 @@
   var BOOT_CSS = [
     'html.tc-boot [data-tc="root"]:not([data-tc-visible="true"]),',
     'html.tc-boot [data-tc="banner"]:not([data-tc-visible="true"]),',
-    'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"])',
-    "{display:none!important}"
+    'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"]),',
+    'html.tc-boot [data-tc="float"]:not([data-tc-visible="true"]),',
+    'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"]',
+    "{display:none!important}",
+    'html.tc-boot [data-tc-element="chevron"]{transition:transform 150ms ease}',
+    'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>[data-tc-element="chevron"],',
+    'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>:not([data-tc-element="details"]) [data-tc-element="chevron"]',
+    "{transform:rotate(180deg)}"
   ].join("");
   function readConfig(script) {
     const attr = (name, fallback) => {
