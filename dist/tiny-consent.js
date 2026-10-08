@@ -565,73 +565,73 @@
       ["_ga", "Tells visitors apart.", "2 years"],
       ["_ga_*", "Keeps the session state.", "2 years"],
       ["_gid", "Tells visitors apart.", "24 hours"]
-    ]],
-    ["google-tag-manager", "Google Tag Manager", "analytics", GOOGLE, ["googletagmanager.com/gtm.js", "googletagmanager.com/ns.html"], []],
+    ], ["_ga*", "_gat*", "_gid"]],
+    ["google-tag-manager", "Google Tag Manager", "analytics", GOOGLE, ["googletagmanager.com/gtm.js", "googletagmanager.com/ns.html"], [], ["_dc_gtm_*"]],
     ["hotjar", "Hotjar", "analytics", "https://www.hotjar.com/legal/policies/privacy/", ["hotjar.com"], [
       ["_hjSessionUser_*", "Identifies returning visitors.", "1 year"],
       ["_hjSession_*", "Holds the current session.", "30 minutes"]
-    ]],
+    ], ["_hj*"]],
     ["clarity", "Microsoft Clarity", "analytics", MS, ["clarity.ms"], [
       ["_clck", "Persists the Clarity user id.", "1 year"],
       ["_clsk", "Links page views into one session.", "1 day"]
-    ]],
-    ["mixpanel", "Mixpanel", "analytics", "https://mixpanel.com/legal/privacy-policy", ["mixpanel.com"], [["mp_*_mixpanel", "Tracks events and visitors.", "1 year"]]],
+    ], ["_clck", "_clsk", "_cltk"]],
+    ["mixpanel", "Mixpanel", "analytics", "https://mixpanel.com/legal/privacy-policy", ["mixpanel.com"], [["mp_*_mixpanel", "Tracks events and visitors.", "1 year"]], ["mp_*_mixpanel*", "__mp_opt_in_out_*"]],
     ["segment", "Segment", "analytics", "https://segment.com/legal/privacy", ["segment.com", "segment.io"], [
       ["ajs_anonymous_id", "Anonymous visitor id.", "1 year"],
       ["ajs_user_id", "Logged-in user id.", "1 year"]
-    ]],
-    ["amplitude", "Amplitude", "analytics", "https://amplitude.com/privacy", ["amplitude.com"], [["AMP_*", "Device and session ids.", "1 year"]]],
-    ["heap", "Heap", "analytics", "https://www.heap.io/privacy", ["heapanalytics.com"], [["_hp2_id.*", "Visitor id.", "13 months"]]],
-    ["fullstory", "FullStory", "analytics", "https://www.fullstory.com/legal/privacy-policy", ["fullstory.com"], [["fs_uid", "Session replay id.", "1 year"]]],
+    ], ["ajs_*"]],
+    ["amplitude", "Amplitude", "analytics", "https://amplitude.com/privacy", ["amplitude.com"], [["AMP_*", "Device and session ids.", "1 year"]], ["AMP_*", "amp_*", "amplitude_*"]],
+    ["heap", "Heap", "analytics", "https://www.heap.io/privacy", ["heapanalytics.com"], [["_hp2_id.*", "Visitor id.", "13 months"]], ["_hp2_*"]],
+    ["fullstory", "FullStory", "analytics", "https://www.fullstory.com/legal/privacy-policy", ["fullstory.com"], [["fs_uid", "Session replay id.", "1 year"]], ["fs_uid", "fs_lua", "fs_cid"]],
     ["mouseflow", "Mouseflow", "analytics", "https://mouseflow.com/legal/gdpr", ["mouseflow.com"], [
       ["mf_user", "Marks returning visitors.", "90 days"],
       ["mf_*", "Session recording id.", "Session"]
-    ]],
+    ], ["mf_*"]],
     ["matomo", "Matomo", "analytics", "https://matomo.org/privacy-policy", ["matomo.cloud"], [
       ["_pk_id.*", "Visitor id.", "13 months"],
       ["_pk_ses.*", "Current session.", "30 minutes"]
-    ]],
+    ], ["_pk_*", "mtm_*"]],
     ["plausible", "Plausible", "analytics", "https://plausible.io/privacy", ["plausible.io"], []],
     ["fathom", "Fathom", "analytics", "https://usefathom.com/privacy", ["usefathom.com"], []],
-    ["posthog", "PostHog", "analytics", "https://posthog.com/privacy", ["posthog.com"], [["ph_*_posthog", "Visitor id and session.", "1 year"]]],
-    ["luckyorange", "Lucky Orange", "analytics", "https://www.luckyorange.com/privacy.php", ["luckyorange.com"], [["_lo_uid", "Visitor id.", "2 years"]]],
-    ["smartlook", "Smartlook", "analytics", "https://www.smartlook.com/privacy-policy", ["smartlook.com"], [["SL_C_*", "Visitor and session id.", "13 months"]]],
+    ["posthog", "PostHog", "analytics", "https://posthog.com/privacy", ["posthog.com"], [["ph_*_posthog", "Visitor id and session.", "1 year"]], ["ph_*_posthog*"]],
+    ["luckyorange", "Lucky Orange", "analytics", "https://www.luckyorange.com/privacy.php", ["luckyorange.com"], [["_lo_uid", "Visitor id.", "2 years"]], ["_lo_*", "_lorid"]],
+    ["smartlook", "Smartlook", "analytics", "https://www.smartlook.com/privacy-policy", ["smartlook.com"], [["SL_C_*", "Visitor and session id.", "13 months"]], ["SL_*"]],
     // marketing
     ["meta-pixel", "Meta Pixel", "marketing", "https://www.facebook.com/privacy/policy/", ["connect.facebook.net", "facebook.com/tr"], [
       ["_fbp", "Identifies browsers for ad delivery and measurement.", "90 days"],
       ["_fbc", "Stores the last ad click.", "90 days"]
-    ]],
+    ], ["_fbp", "_fbc"]],
     ["google-ads", "Google Ads", "marketing", "https://policies.google.com/technologies/ads", ["googleadservices.com", "doubleclick.net", "googlesyndication.com"], [
       ["_gcl_au", "Conversion attribution.", "90 days"],
       ["IDE", "Ad targeting across sites.", "13 months"],
       ["test_cookie", "Checks whether cookies can be set.", "15 minutes"]
-    ]],
+    ], ["_gcl_*", "_gac_*"]],
     ["linkedin", "LinkedIn Insight Tag", "marketing", "https://www.linkedin.com/legal/privacy-policy", ["ads.linkedin.com", "snap.licdn.com"], [
       ["li_sugr", "Browser id for ads.", "90 days"],
       ["bcookie", "Browser id.", "1 year"],
       ["UserMatchHistory", "Syncs ad ids.", "30 days"]
-    ]],
-    ["tiktok", "TikTok Pixel", "marketing", "https://www.tiktok.com/legal/privacy-policy", ["analytics.tiktok.com"], [["_ttp", "Ad measurement id.", "13 months"]]],
+    ], ["li_*", "ln_or", "lidc", "bcookie", "bscookie", "UserMatchHistory", "AnalyticsSyncHistory"]],
+    ["tiktok", "TikTok Pixel", "marketing", "https://www.tiktok.com/legal/privacy-policy", ["analytics.tiktok.com"], [["_ttp", "Ad measurement id.", "13 months"]], ["_ttp", "_tt_*"]],
     ["microsoft-ads", "Microsoft Advertising", "marketing", MS, ["bat.bing.com"], [
       ["_uetsid", "Session id for ad measurement.", "1 day"],
       ["_uetvid", "Visitor id for ad measurement.", "13 months"],
       ["MUID", "Browser id across Microsoft sites.", "13 months"]
-    ]],
+    ], ["_uet*", "MUID"]],
     ["x-pixel", "X Pixel", "marketing", "https://x.com/privacy", ["ads-twitter.com"], [
       ["muc_ads", "Ad measurement.", "2 years"],
       ["personalization_id", "Ad personalisation.", "2 years"]
-    ]],
-    ["pinterest", "Pinterest Tag", "marketing", "https://policy.pinterest.com/privacy-policy", ["pinimg.com", "pinterest.com"], [["_pin_unauth", "Groups actions of visitors not logged in to Pinterest.", "1 year"]]],
+    ], ["_twclid", "muc_ads", "personalization_id"]],
+    ["pinterest", "Pinterest Tag", "marketing", "https://policy.pinterest.com/privacy-policy", ["pinimg.com", "pinterest.com"], [["_pin_unauth", "Groups actions of visitors not logged in to Pinterest.", "1 year"]], ["_pin_*", "_pinterest_*", "_epik", "_derived_epik"]],
     ["hubspot", "HubSpot", "marketing", "https://legal.hubspot.com/privacy-policy", ["hs-scripts.com", "hs-analytics.net", "hsforms.net"], [
       ["__hstc", "Visitor and session tracking.", "6 months"],
       ["hubspotutk", "Visitor identity for forms.", "6 months"],
       ["__hssc", "Current session.", "30 minutes"],
       ["__hssrc", "New session flag.", "Session"]
-    ]],
-    ["snapchat", "Snap Pixel", "marketing", "https://values.snap.com/privacy/privacy-policy", ["sc-static.net", "tr.snapchat.com"], [["_scid", "Visitor id.", "13 months"]]],
-    ["reddit", "Reddit Pixel", "marketing", "https://www.reddit.com/policies/privacy-policy", ["redditstatic.com"], [["_rdt_uuid", "Ad measurement id.", "90 days"]]],
-    ["adroll", "AdRoll", "marketing", "https://www.nextroll.com/privacy", ["adroll.com"], [["__adroll", "Visitor id for retargeting.", "1 year"]]],
-    ["criteo", "Criteo", "marketing", "https://www.criteo.com/privacy/", ["criteo.com", "criteo.net"], [["cto_bundle", "Ad personalisation id.", "13 months"]]],
+    ], ["__hs*", "hubspotutk", "hs_ab_test", "hs-messages-*", "messagesUtk"]],
+    ["snapchat", "Snap Pixel", "marketing", "https://values.snap.com/privacy/privacy-policy", ["sc-static.net", "tr.snapchat.com"], [["_scid", "Visitor id.", "13 months"]], ["_scid*", "_sctr"]],
+    ["reddit", "Reddit Pixel", "marketing", "https://www.reddit.com/policies/privacy-policy", ["redditstatic.com"], [["_rdt_uuid", "Ad measurement id.", "90 days"]], ["_rdt_*"]],
+    ["adroll", "AdRoll", "marketing", "https://www.nextroll.com/privacy", ["adroll.com"], [["__adroll", "Visitor id for retargeting.", "1 year"]], ["__adroll*", "__ar_v4"]],
+    ["criteo", "Criteo", "marketing", "https://www.criteo.com/privacy/", ["criteo.com", "criteo.net"], [["cto_bundle", "Ad personalisation id.", "13 months"]], ["cto_*"]],
     ["youtube", "YouTube", "marketing", GOOGLE, ["youtube.com", "youtube-nocookie.com"], [
       ["VISITOR_INFO1_LIVE", "Measures bandwidth and playback.", "6 months"],
       ["YSC", "Session id for embedded videos.", "Session"]
@@ -642,21 +642,21 @@
     ["intercom", "Intercom", "personalization", "https://www.intercom.com/legal/privacy", ["intercom.io", "intercomcdn.com"], [
       ["intercom-id-*", "Anonymous visitor id.", "9 months"],
       ["intercom-session-*", "Keeps the chat session.", "7 days"]
-    ]],
-    ["crisp", "Crisp", "personalization", "https://crisp.chat/en/privacy/", ["crisp.chat"], [["crisp-client/*", "Chat session.", "6 months"]]],
+    ], ["intercom-*"]],
+    ["crisp", "Crisp", "personalization", "https://crisp.chat/en/privacy/", ["crisp.chat"], [["crisp-client/*", "Chat session.", "6 months"]], ["crisp-client*"]],
     ["drift", "Drift", "personalization", "https://www.drift.com/privacy-policy/", ["drift.com", "driftt.com"], [
       ["driftt_aid", "Anonymous visitor id.", "2 years"],
       ["drift_campaign_refresh", "Campaign display timing.", "30 minutes"]
-    ]],
-    ["optimizely", "Optimizely", "personalization", "https://www.optimizely.com/legal/privacy-policy/", ["optimizely.com"], [["optimizelyEndUserId", "Experiment bucketing.", "6 months"]]],
+    ], ["drift*", "DFTT_*"]],
+    ["optimizely", "Optimizely", "personalization", "https://www.optimizely.com/legal/privacy-policy/", ["optimizely.com"], [["optimizelyEndUserId", "Experiment bucketing.", "6 months"]], ["optimizely*"]],
     ["vwo", "VWO", "personalization", "https://vwo.com/privacy-policy/", ["visualwebsiteoptimizer.com"], [
       ["_vwo_uuid_v2", "Experiment visitor id.", "1 year"],
       ["_vis_opt_s", "Session count.", "100 days"]
-    ]],
+    ], ["_vwo_*", "_vis_opt_*"]],
     ["tawk", "Tawk.to", "personalization", "https://www.tawk.to/privacy-policy/", ["tawk.to"], [
       ["TawkConnectionTime", "Chat connection.", "Session"],
       ["twk_uuid_*", "Visitor id.", "6 months"]
-    ]]
+    ], ["twk_*", "TawkConnectionTime", "tawkUUID", "__tawkuuid"]]
   ];
   var ALWAYS = /* @__PURE__ */ new Set(["tiny-consent"]);
   function cookieObject(cookie) {
@@ -664,7 +664,7 @@
     return { name: cookie.name, purpose: cookie.purpose || "", duration: cookie.duration || "" };
   }
   function normalizeVendor(entry) {
-    const v = Array.isArray(entry) ? { id: entry[0], name: entry[1], category: entry[2], privacy: entry[3], hosts: entry[4], cookies: entry[5], always: ALWAYS.has(entry[0]) } : entry;
+    const v = Array.isArray(entry) ? { id: entry[0], name: entry[1], category: entry[2], privacy: entry[3], hosts: entry[4], cookies: entry[5], purge: entry[6], always: ALWAYS.has(entry[0]) } : entry;
     return {
       id: String(v.id),
       name: v.name || v.id,
@@ -672,6 +672,7 @@
       privacy: v.privacy || "",
       hosts: Array.isArray(v.hosts) ? v.hosts.map((h) => String(h).toLowerCase()) : [],
       cookies: Array.isArray(v.cookies) ? v.cookies.map(cookieObject) : [],
+      purge: Array.isArray(v.purge) ? v.purge.map(String) : [],
       always: Boolean(v.always)
     };
   }
@@ -703,6 +704,7 @@
     mergeVendors(REGISTRY, extra).forEach((v) => {
       if (!wanted.has(v.category)) return;
       v.cookies.forEach((c) => patterns.add(c.name));
+      v.purge.forEach((p) => patterns.add(p));
     });
     return Array.from(patterns);
   }
@@ -812,7 +814,6 @@
       cookieDays: Number(attr("data-tc-cookie-days", 180)) || 180,
       cookieName: attr("data-tc-cookie-name", COOKIE_NAME),
       reload: attr("data-tc-reload", "true") !== "false",
-      purge: attr("data-tc-purge", "true") !== "false",
       block: attr("data-tc-block", ""),
       purge: attr("data-tc-purge", "true") !== "false",
       vendors: attr("data-tc-vendors", "").split(/[\s,]+/).filter(Boolean)
@@ -858,6 +859,9 @@
       if (removed.length) emit("tc:purge", { cookies: removed, categories: denied });
       return removed;
     }
+    purge();
+    win.addEventListener("load", purge);
+    win.addEventListener("pagehide", purge);
     function closePanels() {
       if (!ui) return;
       if (consent.chosen) ui.hideAll();
@@ -874,7 +878,10 @@
       }
       blocker.activate();
       emit("tc:consent", getConsent());
-      if (config.reload && isDowngrade(previous, consent)) win.location.reload();
+      if (isDowngrade(previous, consent)) {
+        win.addEventListener("pagehide", () => purge(), { once: true });
+        if (config.reload) win.location.reload();
+      }
     }
     function reset() {
       doc.cookie = cookieString(config.cookieName, "", { days: -1, secure });

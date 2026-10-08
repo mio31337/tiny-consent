@@ -47,8 +47,7 @@ Site settings → Custom code → **Head code**. Put this first, before any anal
 | `data-tc-block` | | Extra hosts to block, `host[:category]`, comma separated. `cdn.example.com:analytics, pixel.example.com`. Category defaults to `marketing`. Use `:essential` to let a host through the default list, e.g. `googletagmanager.com:essential`. |
 | `data-tc-reload` | `true` | Reload the page when a category that was allowed becomes denied. Running scripts cannot be unloaded, so this is how they stop. Set `false` to skip. |
 | `data-tc-cookie-name` | `tc_consent` | Cookie name. |
-| `data-tc-purge` | `true` | Delete the known cookies of denied categories (on load and after every change). Set `false` to keep them. |
-| `data-tc-purge` | `true` | Delete the known cookies of vendors in denied categories (on load and after every change). Set `false` to leave cookies alone. |
+| `data-tc-purge` | `true` | Delete the known cookies of vendors in denied categories (on load, after every change, and when the page is left). Set `false` to leave cookies alone. |
 | `data-tc-vendors` | | Vendor ids to list in the panel even when nothing on the page matches them (server-side tags), e.g. `meta-pixel, hubspot`. See [Vendor list](#vendor-list). |
 
 Then publish. Tags added under Webflow **Apps & Integrations** (the Google Analytics and Facebook Pixel fields) load before custom code and cannot be blocked. Paste those snippets into Head code instead.
@@ -171,9 +170,12 @@ Per-site additions and overrides go in Head code before or after the script:
 <script>
   window.TinyConsentVendors = [
     // Add a vendor the registry does not know. hosts match script/iframe URLs and inline snippets.
+    // cookies are shown in the panel; purge lists every other cookie name (with * wildcards)
+    // to delete once the category is denied.
     { id: 'acme-chat', name: 'Acme Chat', category: 'personalization',
       privacy: 'https://acme.example/privacy', hosts: ['cdn.acme-chat.example'],
-      cookies: [{ name: 'acme_sid', purpose: 'Keeps the chat session.', duration: '1 day' }] },
+      cookies: [{ name: 'acme_sid', purpose: 'Keeps the chat session.', duration: '1 day' }],
+      purge: ['acme_*'] },
     // Override only some fields of a built-in vendor (matched by id).
     { id: 'google-analytics', name: 'Google Analytics 4' },
   ];

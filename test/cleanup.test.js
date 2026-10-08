@@ -103,11 +103,47 @@ describe('cookiePatternsFor', () => {
     expect(cookiePatternsFor(['analytics'])).toContain('_ga_*');
   });
 
-  it('includes per-site vendors', () => {
+  it('includes per-site vendors and their purge patterns', () => {
     const patterns = cookiePatternsFor(['personalization'], [
-      { id: 'acme', category: 'personalization', cookies: [{ name: 'acme_sid' }] },
+      { id: 'acme', category: 'personalization', cookies: [{ name: 'acme_sid' }], purge: ['acme_*'] },
     ]);
     expect(patterns).toContain('acme_sid');
+    expect(patterns).toContain('acme_*');
     expect(patterns).toContain('intercom-id-*');
+  });
+
+  it('deletes everything a tracker leaves behind, not only the cookies shown in the panel', () => {
+    const doc = jar([
+      { name: '_ga', value: 'x', domain: 'example.com' },
+      { name: '_ga_ABC', value: 'x', domain: 'example.com' },
+      { name: '_gat_UA-1', value: 'x', domain: 'example.com' },
+      { name: '_hjFirstSeen', value: 'x', domain: 'example.com' },
+      { name: '_hjAbsoluteSessionInProgress', value: 'x', domain: 'example.com' },
+      { name: '_gcl_aw', value: 'x', domain: 'example.com' },
+      { name: '_gcl_gs', value: 'x', domain: 'example.com' },
+      { name: '_tt_enable_cookie', value: 'x', domain: 'example.com' },
+      { name: '__hs_opt_out', value: 'x', domain: 'example.com' },
+      { name: 'ln_or', value: 'x', domain: 'example.com' },
+      { name: 'session', value: 'keep' },
+      { name: 'tc_consent', value: 'keep' },
+    ]);
+    const removed = purgeCookies(doc, cookiePatternsFor(['analytics', 'marketing', 'personalization']), {
+      hostname: 'www.example.com',
+      keep: ['tc_consent'],
+    });
+    expect(removed).toHaveLength(10);
+    expect(cookieNames(doc.cookie).sort()).toEqual(['session', 'tc_consent']);
+  });
+
+  it('leaves cookies of allowed categories alone', () => {
+    const doc = jar([
+      { name: '_ga', value: 'x', domain: 'example.com' },
+      { name: '_hjFirstSeen', value: 'x', domain: 'example.com' },
+      { name: '_fbp', value: 'x', domain: 'example.com' },
+      { name: '_gcl_aw', value: 'x', domain: 'example.com' },
+    ]);
+    const removed = purgeCookies(doc, cookiePatternsFor(['marketing']), { hostname: 'www.example.com' });
+    expect(removed.sort()).toEqual(['_fbp', '_gcl_aw']);
+    expect(cookieNames(doc.cookie).sort()).toEqual(['_ga', '_hjFirstSeen']);
   });
 });

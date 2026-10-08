@@ -57,7 +57,6 @@ function readConfig(script) {
     cookieDays: Number(attr('data-tc-cookie-days', 180)) || 180,
     cookieName: attr('data-tc-cookie-name', COOKIE_NAME),
     reload: attr('data-tc-reload', 'true') !== 'false',
-    purge: attr('data-tc-purge', 'true') !== 'false',
     block: attr('data-tc-block', ''),
     purge: attr('data-tc-purge', 'true') !== 'false',
     vendors: attr('data-tc-vendors', '')
@@ -115,6 +114,13 @@ function readConfig(script) {
     return removed;
   }
 
+  // Trackers that ran before the script (or before the visitor said no) may set or refresh
+  // their cookies at any point, so the purge runs now, once the DOM is ready, after load,
+  // and while the page is being left.
+  purge();
+  win.addEventListener('load', purge);
+  win.addEventListener('pagehide', purge);
+
   function closePanels() {
     if (!ui) return;
     if (consent.chosen) ui.hideAll();
@@ -132,8 +138,14 @@ function readConfig(script) {
     }
     blocker.activate();
     emit('tc:consent', getConsent());
-    // Scripts that already ran cannot be unloaded. A reload is the only way to stop them.
-    if (config.reload && isDowngrade(previous, consent)) win.location.reload();
+    if (isDowngrade(previous, consent)) {
+      // Trackers that are still running write their cookies again as the page is left
+      // (GA refreshes its session cookie on pagehide). Registered now, after theirs, this
+      // listener runs last; the next page load purges once more on top of that.
+      win.addEventListener('pagehide', () => purge(), { once: true });
+      // Scripts that already ran cannot be unloaded. A reload is the only way to stop them.
+      if (config.reload) win.location.reload();
+    }
   }
 
   function reset() {
