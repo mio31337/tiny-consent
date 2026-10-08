@@ -231,7 +231,7 @@
           <li>The banner shows and the Network tab lists no tracker requests.</li>
           <li>After Accept all, trackers load, a <code>tc_consent</code> cookie exists, and the Preferences button appears bottom-left.</li>
           <li>Reload: no banner, trackers load straight away, Preferences button still there.</li>
-          <li>Open preferences from that button, expand a row and a vendor, then Reject all: the page reloads with everything blocked.</li>
+          <li>Open preferences from that button, expand a row and a vendor, then Reject all: the tracker cookies (<code>_ga</code>, <code>_fbp</code>, …) disappear from DevTools → Application → Cookies and the page reloads with everything blocked.</li>
           <li>On a phone-sized viewport the banner spans the width and the buttons stack.</li>
         </ul>
       </li>
@@ -249,6 +249,7 @@
               <tr><td><code>data-tc-block</code></td><td>Extra hosts, <code>host[:category]</code>. <code>:essential</code> lets a host through.</td></tr>
               <tr><td><code>data-tc-reload</code></td><td>Reload when a category is withdrawn (default true)</td></tr>
               <tr><td><code>data-tc-cookie-name</code></td><td>Default <code>tc_consent</code></td></tr>
+              <tr><td><code>data-tc-purge</code></td><td>Delete the known cookies of denied categories on load and after every change (default true)</td></tr>
               <tr><td><code>data-tc-vendors</code></td><td>Vendor ids to list even when not detected, e.g. <code>meta-pixel, hubspot</code></td></tr>
             </tbody>
           </table>
@@ -262,9 +263,11 @@ TinyConsent.setConsent({ analytics: true })
 TinyConsent.acceptAll() / rejectAll()
 TinyConsent.open() / close() / reset()
 TinyConsent.vendors()               // re-scan; [{ id, name, category, privacy, cookies }]
+TinyConsent.purge()                 // delete cookies of denied categories now; returns names removed
 window.TinyConsentVendors = [{ id, name, category, privacy, hosts, cookies }]  // add or override
 
 document.addEventListener('tc:consent',  e =&gt; e.detail)
+document.addEventListener('tc:purge',    e =&gt; e.detail)  // { cookies, categories }
 document.addEventListener('tc:block',    e =&gt; e.detail.element)
 document.addEventListener('tc:activate', e =&gt; e.detail.element)</code></pre>
             <button type="button" class="doc-copy" data-copy="#api-snippet">Copy</button>
