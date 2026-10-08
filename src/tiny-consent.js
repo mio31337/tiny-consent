@@ -12,6 +12,7 @@
 
 import {
   COOKIE_NAME,
+  OPTIONAL_CATEGORIES,
   allConsent,
   categoriesAllowed,
   cookieString,
@@ -26,7 +27,8 @@ import {
 import { createBlocker, parseBlockAttr } from './blocker.js';
 import defaultPatterns from './blocklist.js';
 import { bindUI } from './ui.js';
-import { detectVendors } from './vendors.js';
+import { cookiePatternsFor, detectVendors } from './vendors.js';
+import { purgeCookies } from './cleanup.js';
 
 const VERSION = '0.1.0';
 
@@ -55,7 +57,9 @@ function readConfig(script) {
     cookieDays: Number(attr('data-tc-cookie-days', 180)) || 180,
     cookieName: attr('data-tc-cookie-name', COOKIE_NAME),
     reload: attr('data-tc-reload', 'true') !== 'false',
+    purge: attr('data-tc-purge', 'true') !== 'false',
     block: attr('data-tc-block', ''),
+    purge: attr('data-tc-purge', 'true') !== 'false',
     vendors: attr('data-tc-vendors', '')
       .split(/[\s,]+/)
       .filter(Boolean),
@@ -97,6 +101,20 @@ function readConfig(script) {
     doc.cookie = cookieString(config.cookieName, serializeConsent(consent), { days: config.cookieDays, secure });
   }
 
+  /** Deletes the known cookies of every vendor whose category is currently denied. */
+  function purge() {
+    if (!config.purge) return [];
+    const denied = OPTIONAL_CATEGORIES.filter((category) => !isAllowed(consent, category));
+    if (!denied.length) return [];
+    const removed = purgeCookies(doc, cookiePatternsFor(denied, win.TinyConsentVendors), {
+      hostname: win.location ? win.location.hostname : '',
+      path: win.location ? win.location.pathname : '/',
+      keep: [config.cookieName],
+    });
+    if (removed.length) emit('tc:purge', { cookies: removed, categories: denied });
+    return removed;
+  }
+
   function closePanels() {
     if (!ui) return;
     if (consent.chosen) ui.hideAll();
@@ -107,6 +125,7 @@ function readConfig(script) {
     const previous = consent;
     consent = createConsent(previous, changes);
     persist();
+    purge();
     if (ui) {
       ui.sync(consent);
       ui.hideAll();
@@ -120,6 +139,7 @@ function readConfig(script) {
   function reset() {
     doc.cookie = cookieString(config.cookieName, '', { days: -1, secure });
     consent = defaultConsent({ mode: config.mode, gpc });
+    purge();
     if (ui) {
       ui.sync(consent);
       ui.showBanner();
@@ -151,6 +171,7 @@ function readConfig(script) {
     });
     refreshVendors();
     ui.sync(consent);
+    purge();
     blocker.activate();
     if (!consent.chosen) ui.showBanner();
     emit('tc:consent', getConsent());
@@ -172,5 +193,6 @@ function readConfig(script) {
     close: closePanels,
     reset,
     vendors: refreshVendors,
+    purge,
   };
 })(window, document);

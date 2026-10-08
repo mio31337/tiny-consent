@@ -575,7 +575,7 @@
       ["_clck", "Persists the Clarity user id.", "1 year"],
       ["_clsk", "Links page views into one session.", "1 day"]
     ]],
-    ["mixpanel", "Mixpanel", "analytics", "https://mixpanel.com/legal/privacy-policy", ["mixpanel.com"], [["mp_*", "Tracks events and visitors.", "1 year"]]],
+    ["mixpanel", "Mixpanel", "analytics", "https://mixpanel.com/legal/privacy-policy", ["mixpanel.com"], [["mp_*_mixpanel", "Tracks events and visitors.", "1 year"]]],
     ["segment", "Segment", "analytics", "https://segment.com/legal/privacy", ["segment.com", "segment.io"], [
       ["ajs_anonymous_id", "Anonymous visitor id.", "1 year"],
       ["ajs_user_id", "Logged-in user id.", "1 year"]
@@ -697,6 +697,15 @@
     });
     return Array.from(byId.values());
   }
+  function cookiePatternsFor(categories, extra) {
+    const wanted = new Set(categories || []);
+    const patterns = /* @__PURE__ */ new Set();
+    mergeVendors(REGISTRY, extra).forEach((v) => {
+      if (!wanted.has(v.category)) return;
+      v.cookies.forEach((c) => patterns.add(c.name));
+    });
+    return Array.from(patterns);
+  }
   function collectSources(doc) {
     const urls = [];
     let text = "";
@@ -737,6 +746,47 @@
     })).sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // src/cleanup.js
+  var EXPIRED = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  function cookieMatcher(pattern) {
+    const source = String(pattern).split("*").map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*");
+    return new RegExp(`^${source}$`);
+  }
+  function cookieNames(cookieString2) {
+    return String(cookieString2 || "").split(";").map((part) => part.trim().split("=")[0]).filter(Boolean);
+  }
+  function domainVariants(hostname) {
+    const host = String(hostname || "").toLowerCase();
+    const variants = [""];
+    if (!host || /^(\d+\.){3}\d+$/.test(host) || host === "localhost") return variants;
+    const labels = host.split(".");
+    for (let i = 0; i < labels.length - 1; i++) {
+      const domain = labels.slice(i).join(".");
+      variants.push(domain, "." + domain);
+    }
+    return variants;
+  }
+  function purgeCookies(store, patterns, options) {
+    const opts = options || {};
+    const keep = new Set(opts.keep || []);
+    const matchers = (patterns || []).map(cookieMatcher);
+    const targets = cookieNames(store.cookie).filter((name) => !keep.has(name) && matchers.some((re) => re.test(name)));
+    if (!targets.length) return [];
+    const domains = domainVariants(opts.hostname);
+    const paths = ["/"];
+    const current = opts.path && opts.path !== "/" ? opts.path.replace(/\/[^/]*$/, "") || "/" : "";
+    if (current && current !== "/") paths.push(current, current + "/");
+    targets.forEach((name) => {
+      domains.forEach((domain) => {
+        paths.forEach((path) => {
+          store.cookie = `${name}=; ${EXPIRED}; path=${path}${domain ? `; domain=${domain}` : ""}`;
+        });
+      });
+    });
+    const remaining = new Set(cookieNames(store.cookie));
+    return targets.filter((name) => !remaining.has(name));
+  }
+
   // src/tiny-consent.js
   var VERSION2 = "0.1.0";
   var BOOT_CSS = [
@@ -762,7 +812,9 @@
       cookieDays: Number(attr("data-tc-cookie-days", 180)) || 180,
       cookieName: attr("data-tc-cookie-name", COOKIE_NAME),
       reload: attr("data-tc-reload", "true") !== "false",
+      purge: attr("data-tc-purge", "true") !== "false",
       block: attr("data-tc-block", ""),
+      purge: attr("data-tc-purge", "true") !== "false",
       vendors: attr("data-tc-vendors", "").split(/[\s,]+/).filter(Boolean)
     };
   }
@@ -794,6 +846,18 @@
     function persist() {
       doc.cookie = cookieString(config.cookieName, serializeConsent(consent), { days: config.cookieDays, secure });
     }
+    function purge() {
+      if (!config.purge) return [];
+      const denied = OPTIONAL_CATEGORIES.filter((category) => !isAllowed(consent, category));
+      if (!denied.length) return [];
+      const removed = purgeCookies(doc, cookiePatternsFor(denied, win.TinyConsentVendors), {
+        hostname: win.location ? win.location.hostname : "",
+        path: win.location ? win.location.pathname : "/",
+        keep: [config.cookieName]
+      });
+      if (removed.length) emit("tc:purge", { cookies: removed, categories: denied });
+      return removed;
+    }
     function closePanels() {
       if (!ui) return;
       if (consent.chosen) ui.hideAll();
@@ -803,6 +867,7 @@
       const previous = consent;
       consent = createConsent(previous, changes);
       persist();
+      purge();
       if (ui) {
         ui.sync(consent);
         ui.hideAll();
@@ -814,6 +879,7 @@
     function reset() {
       doc.cookie = cookieString(config.cookieName, "", { days: -1, secure });
       consent = defaultConsent({ mode: config.mode, gpc });
+      purge();
       if (ui) {
         ui.sync(consent);
         ui.showBanner();
@@ -841,6 +907,7 @@
       });
       refreshVendors();
       ui.sync(consent);
+      purge();
       blocker.activate();
       if (!consent.chosen) ui.showBanner();
       emit("tc:consent", getConsent());
@@ -859,7 +926,8 @@
       open: () => ui && ui.showPreferences(),
       close: closePanels,
       reset,
-      vendors: refreshVendors
+      vendors: refreshVendors,
+      purge
     };
   })(window, document);
 })();

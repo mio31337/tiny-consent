@@ -47,6 +47,8 @@ Site settings → Custom code → **Head code**. Put this first, before any anal
 | `data-tc-block` | | Extra hosts to block, `host[:category]`, comma separated. `cdn.example.com:analytics, pixel.example.com`. Category defaults to `marketing`. Use `:essential` to let a host through the default list, e.g. `googletagmanager.com:essential`. |
 | `data-tc-reload` | `true` | Reload the page when a category that was allowed becomes denied. Running scripts cannot be unloaded, so this is how they stop. Set `false` to skip. |
 | `data-tc-cookie-name` | `tc_consent` | Cookie name. |
+| `data-tc-purge` | `true` | Delete the known cookies of denied categories (on load and after every change). Set `false` to keep them. |
+| `data-tc-purge` | `true` | Delete the known cookies of vendors in denied categories (on load and after every change). Set `false` to leave cookies alone. |
 | `data-tc-vendors` | | Vendor ids to list in the panel even when nothing on the page matches them (server-side tags), e.g. `meta-pixel, hubspot`. See [Vendor list](#vendor-list). |
 
 Then publish. Tags added under Webflow **Apps & Integrations** (the Google Analytics and Facebook Pixel fields) load before custom code and cannot be blocked. Paste those snippets into Head code instead.
@@ -204,7 +206,7 @@ In Webflow, create a variable collection with the same seven values and bind the
 - First visit: banner shows. Nothing optional runs (opt-in) or everything runs (opt-out).
 - Accept all / reject all / save: the choice is stored in `tc_consent` (`SameSite=Lax`, `Secure` on https) for `data-tc-cookie-days` days. Allowed tags run immediately. The panel closes and focus returns to the trigger.
 - Returning visit: no banner. Allowed tags run as the page parses, blocked tags stay blocked.
-- Downgrade (a category goes from allowed to denied): the page reloads so running trackers stop.
+- Downgrade (a category goes from allowed to denied): the cookies that category's vendors are known to set (`_ga`, `_ga_*`, `_fbp`, `_gcl_au`, `__hstc`, … from the registry, plus `window.TinyConsentVendors`) are deleted on every domain variant of the current host, then the page reloads so running trackers stop. The same purge runs on every load for whatever is denied, so a tag that slipped through cannot leave a cookie behind. Limits: scripts cannot touch HttpOnly cookies, third-party cookies set by iframes or pixel responses, or cookies on another registrable domain; `localStorage` is not cleared.
 - Global Privacy Control (`navigator.globalPrivacyControl`): marketing is denied by default in opt-out mode.
 - Escape closes the preferences panel. Closing without a stored choice returns to the banner.
 
@@ -220,8 +222,10 @@ TinyConsent.open()                 // preferences panel
 TinyConsent.close()
 TinyConsent.reset()                // forget the choice, show the banner
 TinyConsent.vendors()              // re-scan the page; [{ id, name, category, privacy, cookies }]
+TinyConsent.purge()                // delete cookies of denied categories now; returns the names removed
 
 document.addEventListener('tc:consent',  e => e.detail)          // on load and after every change
+document.addEventListener('tc:purge',    e => e.detail)          // { cookies: [names removed], categories }
 document.addEventListener('tc:block',    e => e.detail.element)  // a tag was auto-blocked by hostname
 document.addEventListener('tc:activate', e => e.detail.element)  // a marked tag ran or was revealed
 ```

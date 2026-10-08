@@ -37,7 +37,7 @@ export const REGISTRY = [
     ['_clck', 'Persists the Clarity user id.', '1 year'],
     ['_clsk', 'Links page views into one session.', '1 day'],
   ]],
-  ['mixpanel', 'Mixpanel', 'analytics', 'https://mixpanel.com/legal/privacy-policy', ['mixpanel.com'], [['mp_*', 'Tracks events and visitors.', '1 year']]],
+  ['mixpanel', 'Mixpanel', 'analytics', 'https://mixpanel.com/legal/privacy-policy', ['mixpanel.com'], [['mp_*_mixpanel', 'Tracks events and visitors.', '1 year']]],
   ['segment', 'Segment', 'analytics', 'https://segment.com/legal/privacy', ['segment.com', 'segment.io'], [
     ['ajs_anonymous_id', 'Anonymous visitor id.', '1 year'],
     ['ajs_user_id', 'Logged-in user id.', '1 year'],
@@ -169,6 +169,22 @@ export function mergeVendors(registry, extra) {
     byId.set(v.id, Object.assign({}, current, patch));
   });
   return Array.from(byId.values());
+}
+
+/**
+ * Cookie name patterns of every known vendor in the given categories, used to delete
+ * what a tracker left behind once its category is denied.
+ * @param {string[]} categories
+ * @param {Array} [extra] per-site vendors (window.TinyConsentVendors)
+ */
+export function cookiePatternsFor(categories, extra) {
+  const wanted = new Set(categories || []);
+  const patterns = new Set();
+  mergeVendors(REGISTRY, extra).forEach((v) => {
+    if (!wanted.has(v.category)) return;
+    v.cookies.forEach((c) => patterns.add(c.name));
+  });
+  return Array.from(patterns);
 }
 
 /** URLs and inline text worth matching against vendor hosts. */
