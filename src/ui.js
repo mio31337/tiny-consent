@@ -12,6 +12,10 @@
 //   [data-tc-element="details"]           the part of an accordion that is hidden while closed
 //   [data-tc-element="chevron"]           rotates 180° while its accordion is open
 //   [data-tc-element="switch"]            wrapper around a category checkbox (optional)
+//   [data-tc-vendor]                      vendor block inside a row's details. Empty or "sample" = template,
+//                                         replaced by the detected vendors; any other value = hand-written, kept
+//   [data-tc-field="vendor-name|vendor-privacy|cookie|cookie-name|cookie-purpose|cookie-duration|empty"]
+//                                         slots inside the vendor template and the per-row empty message
 //
 // State classes, so the Designer can style states as combo classes:
 //   is-on    on the switch wrapper and its children while the checkbox is checked
@@ -59,6 +63,7 @@ export function bindUI(doc, handlers) {
 
   function showPreferences() {
     if (!prefs) return;
+    if (handlers.beforeOpen) handlers.beforeOpen();
     if (!lastFocus) lastFocus = doc.activeElement;
     setVisible(banner, false);
     setVisible(prefs, true);
@@ -119,6 +124,106 @@ export function bindUI(doc, handlers) {
       if (category !== 'essential') out[category] = input.checked;
     }
     return out;
+  }
+
+  // ---- Vendor list ----
+
+  const templates = new Map(); // row -> vendor template (a clone taken before the samples are removed)
+  let fallbackTemplate = null;
+
+  function isSample(el) {
+    const value = el.getAttribute('data-tc-vendor');
+    return value === '' || value === 'sample';
+  }
+
+  function field(scope, name) {
+    return scope.querySelectorAll(`[data-tc-field="${name}"]`);
+  }
+
+  function setText(scope, name, value) {
+    field(scope, name).forEach((el) => {
+      el.textContent = value;
+    });
+  }
+
+  function resetOpenState(node) {
+    node.removeAttribute('data-tc-open');
+    node.classList.remove('is-open');
+    node.querySelectorAll('.is-open').forEach((el) => el.classList.remove('is-open'));
+    node.querySelectorAll('[aria-expanded]').forEach((el) => el.setAttribute('aria-expanded', 'false'));
+    node.querySelectorAll('[data-tc-open]').forEach((el) => el.removeAttribute('data-tc-open'));
+  }
+
+  function fillVendor(template, vendor) {
+    const node = template.cloneNode(true);
+    node.setAttribute('data-tc-vendor', vendor.id);
+    node.setAttribute('data-tc-generated', '');
+    resetOpenState(node);
+    setText(node, 'vendor-name', vendor.name);
+    field(node, 'vendor-privacy').forEach((link) => {
+      if (vendor.privacy) link.setAttribute('href', vendor.privacy);
+      else link.remove();
+    });
+    const cookieTemplates = Array.from(field(node, 'cookie'));
+    if (cookieTemplates.length) {
+      const cookieTemplate = cookieTemplates[0];
+      const parent = cookieTemplate.parentNode;
+      cookieTemplates.forEach((el) => el.remove());
+      vendor.cookies.forEach((cookie) => {
+        const item = cookieTemplate.cloneNode(true);
+        setText(item, 'cookie-name', cookie.name);
+        setText(item, 'cookie-purpose', cookie.purpose);
+        setText(item, 'cookie-duration', cookie.duration);
+        parent.appendChild(item);
+      });
+    }
+    return node;
+  }
+
+  /**
+   * Fills every category row with the vendors detected for it. The first vendor block in a
+   * row (`data-tc-vendor` empty or "sample") is the template; blocks with another value are
+   * hand-written and kept. Safe to call repeatedly.
+   */
+  function renderVendors(vendors) {
+    if (!root) return;
+    const list = Array.isArray(vendors) ? vendors : [];
+    const rowsWithDetails = [];
+    root.querySelectorAll('[data-tc-category]').forEach((row) => {
+      const details = row.querySelector('[data-tc-element="details"]');
+      if (!details) return;
+      rowsWithDetails.push([row, details]);
+      if (templates.has(row)) return;
+      const first = details.querySelector('[data-tc-vendor]');
+      if (first) {
+        templates.set(row, first.cloneNode(true));
+        if (!fallbackTemplate) fallbackTemplate = templates.get(row);
+      }
+    });
+
+    rowsWithDetails.forEach(([row, details]) => {
+      const category = row.getAttribute('data-tc-category');
+      const template = templates.get(row) || fallbackTemplate;
+      if (!template) return;
+
+      details.querySelectorAll('[data-tc-vendor]').forEach((el) => {
+        if (isSample(el) || el.hasAttribute('data-tc-generated')) el.remove();
+      });
+      const kept = new Set();
+      details.querySelectorAll('[data-tc-vendor]').forEach((el) => kept.add(el.getAttribute('data-tc-vendor')));
+
+      const empty = details.querySelector('[data-tc-field="empty"]');
+      const items = list.filter((v) => v.category === category && !kept.has(v.id));
+      items.forEach((vendor) => {
+        const node = fillVendor(template, vendor);
+        if (empty) details.insertBefore(node, empty);
+        else details.appendChild(node);
+      });
+      if (empty) {
+        if (items.length || kept.size) empty.setAttribute('hidden', '');
+        else empty.removeAttribute('hidden');
+      }
+    });
   }
 
   function toggle(target) {
@@ -194,5 +299,5 @@ export function bindUI(doc, handlers) {
     }
   });
 
-  return { root, banner, prefs, float, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read };
+  return { root, banner, prefs, float, hasUI: Boolean(root), showBanner, showPreferences, hideAll, sync, read, renderVendors };
 }

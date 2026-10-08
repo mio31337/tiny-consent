@@ -47,6 +47,7 @@ Site settings → Custom code → **Head code**. Put this first, before any anal
 | `data-tc-block` | | Extra hosts to block, `host[:category]`, comma separated. `cdn.example.com:analytics, pixel.example.com`. Category defaults to `marketing`. Use `:essential` to let a host through the default list, e.g. `googletagmanager.com:essential`. |
 | `data-tc-reload` | `true` | Reload the page when a category that was allowed becomes denied. Running scripts cannot be unloaded, so this is how they stop. Set `false` to skip. |
 | `data-tc-cookie-name` | `tc_consent` | Cookie name. |
+| `data-tc-vendors` | | Vendor ids to list in the panel even when nothing on the page matches them (server-side tags), e.g. `meta-pixel, hubspot`. See [Vendor list](#vendor-list). |
 
 Then publish. Tags added under Webflow **Apps & Integrations** (the Google Analytics and Facebook Pixel fields) load before custom code and cannot be blocked. Paste those snippets into Head code instead.
 
@@ -121,9 +122,11 @@ Div                 data-tc="root"                 position relative, z-index 99
 │     │     │     └─ Div              knob
 │     │     ├─ Paragraph  description
 │     │     └─ Div  data-tc-element="details"      vendor list, hidden until the chevron opens it
-│     │        └─ Div   data-tc-element="accordion"             one per vendor
-│     │           ├─ Div   head: vendor name, privacy link, chevron button (same as above)
-│     │           └─ Div   data-tc-element="details"             cookie table: name, purpose, duration
+│     │        ├─ Div   data-tc-element="accordion" data-tc-vendor="sample"   template, cloned per detected vendor
+│     │        │  ├─ Div   head: name (data-tc-field="vendor-name"), link (data-tc-field="vendor-privacy"), chevron button
+│     │        │  └─ Div   data-tc-element="details"
+│     │        │     └─ Div   data-tc-field="cookie"   one per cookie: cookie-name, cookie-purpose, cookie-duration
+│     │        └─ Paragraph  data-tc-field="empty"     shown when nothing was detected for the category
 │     └─ Div           actions
 │        ├─ Button     data-tc-action="reject-all"
 │        ├─ Button     data-tc-action="save"
@@ -149,6 +152,33 @@ Rules:
 ### Visible names
 
 Category labels are plain text. Rename "Analytics" to "Analytik" or "Statistics" in the Designer; the attribute value stays `analytics`.
+
+### Vendor list
+
+The vendor cards inside each row are generated. When the page loads, and again every time the panel opens, the script scans every `script` and `iframe` on the page (the URL in `src`, or in `data-tc-src` for tags the blocker neutralised) and the text of inline snippets and `noscript` tags, and matches them against a built-in registry: Google Analytics, Tag Manager, Meta Pixel, Google Ads, LinkedIn, TikTok, Microsoft Ads, HubSpot, Hotjar, Clarity, YouTube, Vimeo, Google Maps, Intercom, Crisp, Drift, and every other host on the default block list (`src/vendors.js`). Each match becomes a card with the vendor name, privacy policy link, and the cookies it sets (name, purpose, duration). Tiny Consent itself is always listed under Essential with the configured cookie lifetime.
+
+How the markup drives it:
+
+- The first block with `data-tc-vendor` in a row's details is the template. Give it `data-tc-vendor="sample"` (that is what the paste ships). The script clones it per vendor, fills the `data-tc-field` slots (`vendor-name`, `vendor-privacy`, `cookie`, `cookie-name`, `cookie-purpose`, `cookie-duration`), and removes the sample. A row without its own template borrows the first one it finds.
+- A block with any other value, e.g. `data-tc-vendor="in-house-pixel"`, is hand-written: it stays as it is, and a registry vendor with the same id is not generated twice.
+- An element with `data-tc-field="empty"` inside the details is shown when nothing was detected for that category and gets the `hidden` attribute otherwise.
+
+Per-site additions and overrides go in Head code before or after the script:
+
+```html
+<script>
+  window.TinyConsentVendors = [
+    // Add a vendor the registry does not know. hosts match script/iframe URLs and inline snippets.
+    { id: 'acme-chat', name: 'Acme Chat', category: 'personalization',
+      privacy: 'https://acme.example/privacy', hosts: ['cdn.acme-chat.example'],
+      cookies: [{ name: 'acme_sid', purpose: 'Keeps the chat session.', duration: '1 day' }] },
+    // Override only some fields of a built-in vendor (matched by id).
+    { id: 'google-analytics', name: 'Google Analytics 4' },
+  ];
+</script>
+```
+
+`data-tc-vendors="meta-pixel, hubspot"` on the script tag lists registry vendors even when nothing on the page matches (tags fired server-side). `TinyConsent.vendors()` re-scans and returns the current list.
 
 ## 5. Brand it per project
 
@@ -189,6 +219,7 @@ TinyConsent.rejectAll()
 TinyConsent.open()                 // preferences panel
 TinyConsent.close()
 TinyConsent.reset()                // forget the choice, show the banner
+TinyConsent.vendors()              // re-scan the page; [{ id, name, category, privacy, cookies }]
 
 document.addEventListener('tc:consent',  e => e.detail)          // on load and after every change
 document.addEventListener('tc:block',    e => e.detail.element)  // a tag was auto-blocked by hostname
@@ -203,4 +234,4 @@ Use `tc:consent` to update Google Consent Mode or push to a GTM `dataLayer` if y
 
 ## Scope
 
-This kit covers the part of a consent tool that runs on the site. Scanning a site for trackers, consent-log storage and analytics, region-specific banners, AI tracker descriptions, and policy-page generation are separate products and are out of scope here. The kit does not provide legal advice; which categories you need and what your policy says is still your call.
+This kit covers the part of a consent tool that runs on the site. The vendor list reflects the tags present in the page the visitor is looking at, matched against a fixed registry; a crawl of the whole site, consent-log storage and analytics, region-specific banners, AI tracker descriptions, and policy-page generation are separate products and are out of scope here. The kit does not provide legal advice; which categories you need and what your policy says is still your call.

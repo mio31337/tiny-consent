@@ -375,6 +375,18 @@
   border-radius: var(--tc-radius-row);
 }
 
+/* Shown by the script when no vendor was detected for the category. */
+.tc-row_empty {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 10px 12px;
+  border-radius: var(--tc-radius-row);
+  background-color: color-mix(in srgb, var(--tc-text) 4%, transparent);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--tc-muted);
+}
+
 .tc-vendor_head {
   display: flex;
   align-items: center;

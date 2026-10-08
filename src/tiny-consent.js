@@ -3,7 +3,12 @@
 //   <script src="https://your-host/tiny-consent.js"
 //           data-tc-mode="opt-in"
 //           data-tc-cookie-days="180"
-//           data-tc-block="cdn.example.com:analytics"></script>
+//           data-tc-block="cdn.example.com:analytics"
+//           data-tc-vendors="meta-pixel"></script>
+//
+// The preferences panel lists the vendors detected on the page (see vendors.js).
+// `data-tc-vendors` forces registry entries in; `window.TinyConsentVendors` adds or
+// overrides entries per site.
 
 import {
   COOKIE_NAME,
@@ -21,6 +26,7 @@ import {
 import { createBlocker, parseBlockAttr } from './blocker.js';
 import defaultPatterns from './blocklist.js';
 import { bindUI } from './ui.js';
+import { detectVendors } from './vendors.js';
 
 const VERSION = '0.1.0';
 
@@ -30,7 +36,8 @@ const BOOT_CSS = [
   'html.tc-boot [data-tc="banner"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="float"]:not([data-tc-visible="true"]),',
-  'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"]',
+  'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"],',
+  'html.tc-boot [data-tc="root"] [hidden]',
   '{display:none!important}',
   'html.tc-boot [data-tc-element="chevron"]{transition:transform 150ms ease}',
   'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>[data-tc-element="chevron"],',
@@ -49,6 +56,9 @@ function readConfig(script) {
     cookieName: attr('data-tc-cookie-name', COOKIE_NAME),
     reload: attr('data-tc-reload', 'true') !== 'false',
     block: attr('data-tc-block', ''),
+    vendors: attr('data-tc-vendors', '')
+      .split(/[\s,]+/)
+      .filter(Boolean),
   };
 }
 
@@ -117,13 +127,29 @@ function readConfig(script) {
     emit('tc:consent', getConsent());
   }
 
+  let vendors = [];
+
+  /** Re-scans the page for tracker tags and rebuilds the vendor lists in the panel. */
+  function refreshVendors() {
+    vendors = detectVendors(doc, {
+      extra: win.TinyConsentVendors,
+      include: config.vendors,
+      cookieDays: config.cookieDays,
+      base: win.location ? win.location.href : undefined,
+    });
+    if (ui) ui.renderVendors(vendors);
+    return vendors.map((v) => ({ ...v }));
+  }
+
   function ready() {
     ui = bindUI(doc, {
       acceptAll: () => apply(allConsent(true)),
       rejectAll: () => apply(allConsent(false)),
       save: (changes) => apply(changes),
       close: closePanels,
+      beforeOpen: refreshVendors,
     });
+    refreshVendors();
     ui.sync(consent);
     blocker.activate();
     if (!consent.chosen) ui.showBanner();
@@ -145,5 +171,6 @@ function readConfig(script) {
     open: () => ui && ui.showPreferences(),
     close: closePanels,
     reset,
+    vendors: refreshVendors,
   };
 })(window, document);

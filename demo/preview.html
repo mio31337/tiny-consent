@@ -162,7 +162,10 @@
           One row per category. The row is an accordion: the chevron button toggles the vendor list
           (data-tc-element="details"). Each vendor is a nested accordion with its cookie table.
           The switch is a checkbox field: the input carries the category name, the label is hidden,
-          the knob is a plain div. Vendors and cookies are sample content; replace them with yours.
+          the knob is a plain div. The vendor block in each row (data-tc-vendor="sample") is a template:
+          on the published site the script detects the trackers on the page and clones it once per
+          vendor, filling the data-tc-field slots; the sample itself is removed. A block with any other
+          data-tc-vendor value is hand-written and kept. The empty message shows when nothing was found.
           The Essential row ships open and the Analytics switch ships on so the state combos paste too.
         -->
         <form class="tc-form">
@@ -178,11 +181,12 @@
             </div>
             <p class="tc-row_desc">Required for the site to work. Always on.</p>
             <div class="tc-row_body" data-tc-element="details">
-              <div class="tc-vendor" data-tc-element="accordion">
+              <!-- Template: the script clones this block once per detected vendor and removes the sample. -->
+              <div class="tc-vendor" data-tc-element="accordion" data-tc-vendor="sample">
                 <div class="tc-vendor_head">
                   <div class="tc-vendor_text">
-                    <div class="tc-vendor_name">Tiny Consent</div>
-                    <a href="#" class="tc-vendor_link">Privacy policy</a>
+                    <div class="tc-vendor_name" data-tc-field="vendor-name">Tiny Consent</div>
+                    <a href="#" class="tc-vendor_link" data-tc-field="vendor-privacy">Privacy policy</a>
                   </div>
                   <button type="button" class="tc-chevron" data-tc-action="toggle" aria-label="Show cookies" aria-expanded="false">
                     <div class="tc-chevron_icon" data-tc-element="chevron">
@@ -191,13 +195,14 @@
                   </button>
                 </div>
                 <div class="tc-vendor_body" data-tc-element="details">
-                  <div class="tc-cookie">
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val">tc_consent</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val">Stores the cookie choices you make here.</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val">180 days</div></div>
+                  <div class="tc-cookie" data-tc-field="cookie">
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val" data-tc-field="cookie-name">tc_consent</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val" data-tc-field="cookie-purpose">Stores the cookie choices you make here.</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val" data-tc-field="cookie-duration">180 days</div></div>
                   </div>
                 </div>
               </div>
+              <p class="tc-row_empty" data-tc-field="empty">No services from this category were found on this page.</p>
             </div>
           </div>
 
@@ -217,11 +222,12 @@
             </div>
             <p class="tc-row_desc">Help us understand how the site is used.</p>
             <div class="tc-row_body" data-tc-element="details">
-              <div class="tc-vendor" data-tc-element="accordion">
+              <!-- Template: the script clones this block once per detected vendor and removes the sample. -->
+              <div class="tc-vendor" data-tc-element="accordion" data-tc-vendor="sample">
                 <div class="tc-vendor_head">
                   <div class="tc-vendor_text">
-                    <div class="tc-vendor_name">Google Analytics</div>
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                    <div class="tc-vendor_name" data-tc-field="vendor-name">Google Analytics</div>
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="tc-vendor_link" data-tc-field="vendor-privacy">Privacy policy</a>
                   </div>
                   <button type="button" class="tc-chevron" data-tc-action="toggle" aria-label="Show cookies" aria-expanded="false">
                     <div class="tc-chevron_icon" data-tc-element="chevron">
@@ -230,13 +236,14 @@
                   </button>
                 </div>
                 <div class="tc-vendor_body" data-tc-element="details">
-                  <div class="tc-cookie">
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val">_ga, _ga_*</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val">Tells returning visitors and sessions apart.</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val">2 years</div></div>
+                  <div class="tc-cookie" data-tc-field="cookie">
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val" data-tc-field="cookie-name">_ga, _ga_*</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val" data-tc-field="cookie-purpose">Tells returning visitors and sessions apart.</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val" data-tc-field="cookie-duration">2 years</div></div>
                   </div>
                 </div>
               </div>
+              <p class="tc-row_empty" data-tc-field="empty">No services from this category were found on this page.</p>
             </div>
           </div>
 
@@ -256,11 +263,12 @@
             </div>
             <p class="tc-row_desc">Ads, pixels, and embedded media from third parties.</p>
             <div class="tc-row_body" data-tc-element="details">
-              <div class="tc-vendor" data-tc-element="accordion">
+              <!-- Template: the script clones this block once per detected vendor and removes the sample. -->
+              <div class="tc-vendor" data-tc-element="accordion" data-tc-vendor="sample">
                 <div class="tc-vendor_head">
                   <div class="tc-vendor_text">
-                    <div class="tc-vendor_name">Meta Pixel</div>
-                    <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                    <div class="tc-vendor_name" data-tc-field="vendor-name">Meta Pixel</div>
+                    <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener" class="tc-vendor_link" data-tc-field="vendor-privacy">Privacy policy</a>
                   </div>
                   <button type="button" class="tc-chevron" data-tc-action="toggle" aria-label="Show cookies" aria-expanded="false">
                     <div class="tc-chevron_icon" data-tc-element="chevron">
@@ -269,33 +277,14 @@
                   </button>
                 </div>
                 <div class="tc-vendor_body" data-tc-element="details">
-                  <div class="tc-cookie">
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val">_fbp</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val">Attributes conversions back to Meta ads.</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val">90 days</div></div>
+                  <div class="tc-cookie" data-tc-field="cookie">
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val" data-tc-field="cookie-name">_fbp</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val" data-tc-field="cookie-purpose">Attributes conversions back to Meta ads.</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val" data-tc-field="cookie-duration">90 days</div></div>
                   </div>
                 </div>
               </div>
-              <div class="tc-vendor" data-tc-element="accordion">
-                <div class="tc-vendor_head">
-                  <div class="tc-vendor_text">
-                    <div class="tc-vendor_name">YouTube</div>
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
-                  </div>
-                  <button type="button" class="tc-chevron" data-tc-action="toggle" aria-label="Show cookies" aria-expanded="false">
-                    <div class="tc-chevron_icon" data-tc-element="chevron">
-                      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.2 5.7a1 1 0 0 1 1.4 0L8 9.1l3.4-3.4a1 1 0 1 1 1.4 1.4l-4.1 4.1a1 1 0 0 1-1.4 0L3.2 7.1a1 1 0 0 1 0-1.4z"/></svg>
-                    </div>
-                  </button>
-                </div>
-                <div class="tc-vendor_body" data-tc-element="details">
-                  <div class="tc-cookie">
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val">VISITOR_INFO1_LIVE, YSC</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val">Set by embedded videos to measure playback.</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val">Session to 6 months</div></div>
-                  </div>
-                </div>
-              </div>
+              <p class="tc-row_empty" data-tc-field="empty">No services from this category were found on this page.</p>
             </div>
           </div>
 
@@ -315,11 +304,12 @@
             </div>
             <p class="tc-row_desc">Remember your choices and tailor content.</p>
             <div class="tc-row_body" data-tc-element="details">
-              <div class="tc-vendor" data-tc-element="accordion">
+              <!-- Template: the script clones this block once per detected vendor and removes the sample. -->
+              <div class="tc-vendor" data-tc-element="accordion" data-tc-vendor="sample">
                 <div class="tc-vendor_head">
                   <div class="tc-vendor_text">
-                    <div class="tc-vendor_name">Intercom</div>
-                    <a href="https://www.intercom.com/legal/privacy" target="_blank" rel="noopener" class="tc-vendor_link">Privacy policy</a>
+                    <div class="tc-vendor_name" data-tc-field="vendor-name">Intercom</div>
+                    <a href="https://www.intercom.com/legal/privacy" target="_blank" rel="noopener" class="tc-vendor_link" data-tc-field="vendor-privacy">Privacy policy</a>
                   </div>
                   <button type="button" class="tc-chevron" data-tc-action="toggle" aria-label="Show cookies" aria-expanded="false">
                     <div class="tc-chevron_icon" data-tc-element="chevron">
@@ -328,13 +318,14 @@
                   </button>
                 </div>
                 <div class="tc-vendor_body" data-tc-element="details">
-                  <div class="tc-cookie">
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val">intercom-id-*, intercom-session-*</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val">Keeps your chat history across visits.</div></div>
-                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val">9 months</div></div>
+                  <div class="tc-cookie" data-tc-field="cookie">
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Name</div><div class="tc-cookie_val" data-tc-field="cookie-name">intercom-id-*</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Purpose</div><div class="tc-cookie_val" data-tc-field="cookie-purpose">Keeps your chat history across visits.</div></div>
+                    <div class="tc-cookie_row"><div class="tc-cookie_key">Duration</div><div class="tc-cookie_val" data-tc-field="cookie-duration">9 months</div></div>
                   </div>
                 </div>
               </div>
+              <p class="tc-row_empty" data-tc-field="empty">No services from this category were found on this page.</p>
             </div>
           </div>
         </form>
