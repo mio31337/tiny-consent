@@ -116,7 +116,7 @@ Div                 data-tc="root"                 position relative, z-index 99
 │     │     ├─ Div  head
 │     │     │  ├─ Button  data-tc-action="toggle"
 │     │     │  │  └─ Div  data-tc-element="chevron"   SVG embed inside; rotates while open
-│     │     │  ├─ Div     title
+│     │     │  ├─ Div     title   data-tc-action="toggle"   clicking the title opens the row too
 │     │     │  └─ Checkbox field  data-tc-element="switch"   Essential: a Div with a badge instead
 │     │     │     ├─ Checkbox input   name="Analytics"
 │     │     │     ├─ Label            hidden, for the input
@@ -124,7 +124,7 @@ Div                 data-tc="root"                 position relative, z-index 99
 │     │     ├─ Paragraph  description
 │     │     └─ Div  data-tc-element="details"      vendor list, hidden until the chevron opens it
 │     │        ├─ Div   data-tc-element="accordion" data-tc-vendor="sample"   template, cloned per detected vendor
-│     │        │  ├─ Div   head: name (data-tc-field="vendor-name"), link (data-tc-field="vendor-privacy"), chevron button
+│     │        │  ├─ Div   head  data-tc-action="toggle": name (data-tc-field="vendor-name"), link (data-tc-field="vendor-privacy"), chevron button
 │     │        │  └─ Div   data-tc-element="details"
 │     │        │     └─ Div   data-tc-field="cookie"   one per cookie: cookie-name, cookie-purpose, cookie-duration
 │     │        └─ Paragraph  data-tc-field="empty"     shown when nothing was detected for the category
@@ -142,7 +142,7 @@ Rules:
 - Keep every element inside `data-tc="root"` and keep the attributes. Everything else is yours.
 - Set attributes in Element settings → Custom attributes. Put `data-tc-category` on the row Div around each switch; the script finds the checkbox input inside. A row without a checkbox (Essential) is display only.
 - Switches: the checkbox input sits invisibly over the track; the knob is a plain Div. The script adds the combo class `is-on` to the `data-tc-element="switch"` wrapper (or the input's parent if there is no wrapper) and to its children while the category is allowed, so style the on state as `tc-switch` + `is-on` and `tc-switch_knob` + `is-on`.
-- Accordions: any `data-tc-action="toggle"` flips `data-tc-open` on its nearest `data-tc-element="accordion"`; the script hides that accordion's `data-tc-element="details"` while closed, rotates its `data-tc-element="chevron"` while open, and adds the combo class `is-open` to the accordion, the toggle, and the chevron. Nest them as deep as you like. In the Designer everything is expanded; on the published site everything starts closed.
+- Accordions: any `data-tc-action="toggle"` flips `data-tc-open` on its nearest `data-tc-element="accordion"`; the script hides that accordion's `data-tc-element="details"` while closed, rotates its `data-tc-element="chevron"` while open, and adds the combo class `is-open` to the accordion, every toggle in it, and the chevron. An accordion can have more than one toggle (the chevron button and the row title both carry the attribute), and all of them update together. Nest them as deep as you like. In the Designer everything is expanded; on the published site everything starts closed.
 - The `data-tc="float"` button is hidden while the banner or the panel is open and until the visitor has made a choice. A footer link with `data-tc-element="open-preferences"` still works if you prefer that, or want both.
 - Use `button` elements (Button or Link Block with `type="button"`) inside the Form Block. The script also cancels form submission inside the component.
 - Put the component in a symbol that already sits on every page (navbar or footer component). Webflow has no API that injects a component site-wide.

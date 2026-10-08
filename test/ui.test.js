@@ -26,6 +26,7 @@ const MARKUP = `
         <button type="button" data-tc-action="toggle" id="analytics-toggle">
           <div data-tc-element="chevron" id="analytics-chevron"></div>
         </button>
+        <div data-tc-action="toggle" id="analytics-title">Analytics</div>
         <div data-tc-element="switch" id="analytics-switch">
           <input type="checkbox" id="analytics-input" name="Analytics" />
           <label for="analytics-input">Analytics</label>
@@ -99,6 +100,24 @@ describe('accordion', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     click(toggle);
     expect(box.getAttribute('data-tc-open')).toBe('false');
+  });
+
+  it('opens from the title too and keeps every toggle of the row in sync', () => {
+    setup();
+    const box = byId('analytics');
+    const button = byId('analytics-toggle');
+    const title = byId('analytics-title');
+    click(title);
+    expect(box.getAttribute('data-tc-open')).toBe('true');
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.classList.contains('is-open')).toBe(true);
+    expect(byId('analytics-chevron').classList.contains('is-open')).toBe(true);
+    expect(title.classList.contains('is-open')).toBe(true);
+    expect(title.hasAttribute('aria-expanded')).toBe(false); // a plain div carries no ARIA state
+    click(button);
+    expect(box.getAttribute('data-tc-open')).toBe('false');
+    expect(title.classList.contains('is-open')).toBe(false);
+    expect(byId('analytics-chevron').classList.contains('is-open')).toBe(false);
   });
 
   it('nested toggles only affect their own accordion', () => {

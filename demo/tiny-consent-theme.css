@@ -267,7 +267,7 @@
   transform: rotate(180deg);
 }
 
-/* Title in the middle, switch (or badge) on the right. */
+/* Title in the middle, switch (or badge) on the right. Clicking it toggles the row like the chevron. */
 .tc-row_title {
   flex: 1 1 auto;
   min-height: 28px;
@@ -275,6 +275,7 @@
   align-items: center;
   font-size: 15px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 /* Switch: the checkbox input covers the track invisibly, the knob slides with is-on. */
@@ -353,18 +354,16 @@
 .tc-row_desc {
   margin-top: 0;
   margin-bottom: 0;
-  padding-left: 36px;
   font-size: 13px;
   line-height: 1.45;
   color: var(--tc-muted);
 }
 
-/* Vendor list inside a row (hidden until the chevron opens it) */
+/* Vendor list inside a row (hidden until the chevron opens it). Full width, like the description above it. */
 .tc-row_body {
   display: grid;
   gap: 6px;
   margin-top: 10px;
-  padding-left: 36px;
 }
 
 .tc-vendor {
@@ -387,11 +386,13 @@
   color: var(--tc-muted);
 }
 
+/* The whole head toggles the vendor's cookie list; the privacy link inside still navigates. */
 .tc-vendor_head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  cursor: pointer;
 }
 
 .tc-vendor_text {

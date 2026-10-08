@@ -8,7 +8,8 @@
 //   [data-tc-category="…"]     row (or input) for one category inside the panel
 //   [data-tc-action="…"]       accept-all | reject-all | open-preferences | save | close | toggle
 //   [data-tc-element="open-preferences"]  any element anywhere, e.g. a footer link
-//   [data-tc-element="accordion"]         collapsible box; `toggle` inside it flips data-tc-open
+//   [data-tc-element="accordion"]         collapsible box; any `toggle` inside it (chevron button,
+//                                         title) flips data-tc-open, and every toggle reflects the state
 //   [data-tc-element="details"]           the part of an accordion that is hidden while closed
 //   [data-tc-element="chevron"]           rotates 180° while its accordion is open
 //   [data-tc-element="switch"]            wrapper around a category checkbox (optional)
@@ -231,11 +232,17 @@ export function bindUI(doc, handlers) {
     if (!box) return;
     const open = box.getAttribute('data-tc-open') !== 'true';
     box.setAttribute('data-tc-open', open ? 'true' : 'false');
-    target.setAttribute('aria-expanded', open ? 'true' : 'false');
     setClass(box, 'is-open', open);
-    setClass(target, 'is-open', open);
-    const chevron = target.querySelector('[data-tc-element="chevron"]') || (target.matches('[data-tc-element="chevron"]') ? target : null);
-    setClass(chevron, 'is-open', open);
+    // An accordion may have several toggles (the chevron button and the title). All of
+    // them reflect the new state, not only the one that was clicked. Toggles of nested
+    // accordions belong to their own box and are skipped.
+    box.querySelectorAll('[data-tc-action="toggle"]').forEach((el) => {
+      if (el.closest('[data-tc-element="accordion"]') !== box) return;
+      if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') el.setAttribute('aria-expanded', open ? 'true' : 'false');
+      setClass(el, 'is-open', open);
+      const chevron = el.querySelector('[data-tc-element="chevron"]') || (el.matches('[data-tc-element="chevron"]') ? el : null);
+      setClass(chevron, 'is-open', open);
+    });
   }
 
   function run(target, event) {

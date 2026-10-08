@@ -494,11 +494,14 @@
       if (!box) return;
       const open = box.getAttribute("data-tc-open") !== "true";
       box.setAttribute("data-tc-open", open ? "true" : "false");
-      target.setAttribute("aria-expanded", open ? "true" : "false");
       setClass(box, "is-open", open);
-      setClass(target, "is-open", open);
-      const chevron = target.querySelector('[data-tc-element="chevron"]') || (target.matches('[data-tc-element="chevron"]') ? target : null);
-      setClass(chevron, "is-open", open);
+      box.querySelectorAll('[data-tc-action="toggle"]').forEach((el) => {
+        if (el.closest('[data-tc-element="accordion"]') !== box) return;
+        if (el.tagName === "BUTTON" || el.getAttribute("role") === "button") el.setAttribute("aria-expanded", open ? "true" : "false");
+        setClass(el, "is-open", open);
+        const chevron = el.querySelector('[data-tc-element="chevron"]') || (el.matches('[data-tc-element="chevron"]') ? el : null);
+        setClass(chevron, "is-open", open);
+      });
     }
     function run(target, event) {
       const action = target.getAttribute("data-tc-action") || "open-preferences";

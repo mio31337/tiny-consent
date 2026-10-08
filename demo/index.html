@@ -180,7 +180,7 @@
               <tr><td><code>data-tc-action="open-preferences"</code></td><td>button</td><td>Open the panel.</td></tr>
               <tr><td><code>data-tc-action="save"</code></td><td>button</td><td>Store the switch selection.</td></tr>
               <tr><td><code>data-tc-action="close"</code></td><td>button, backdrop</td><td>Close the panel.</td></tr>
-              <tr><td><code>data-tc-action="toggle"</code></td><td>chevron button</td><td>Opens and closes the accordion it sits in. On a div instead of a button, add <code>role="button"</code> and <code>tabindex="0"</code> for keyboard users.</td></tr>
+              <tr><td><code>data-tc-action="toggle"</code></td><td>chevron button, row title, vendor head</td><td>Opens and closes the accordion it sits in. An accordion can have several toggles; all of them reflect the state. A link inside a toggle (the privacy policy) still navigates. The chevron button covers keyboard users, so the title is a plain div; a lone div toggle needs <code>role="button"</code> and <code>tabindex="0"</code>.</td></tr>
               <tr><td><code>data-tc-category="…"</code></td><td>row div around each switch</td><td>Which category the checkbox inside controls. The visible title is yours to change. The Essential row has no switch, only a badge.</td></tr>
               <tr><td><code>data-tc-element="switch"</code></td><td>checkbox field</td><td>Gets the combo class <code>is-on</code> (together with its input, label, and knob) while the category is allowed.</td></tr>
               <tr><td><code>data-tc-element="accordion"</code></td><td>row div, vendor div</td><td>A collapsible box. The script sets <code>data-tc-open</code> and the combo class <code>is-open</code> on it.</td></tr>
