@@ -135,11 +135,13 @@
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 120ms ease, opacity 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
+/* Hover: a slightly lighter fill, no movement. */
 .tc-button:hover {
-  transform: translateY(-1px);
+  background-color: color-mix(in srgb, var(--tc-accent) 85%, transparent);
+  border-color: color-mix(in srgb, var(--tc-accent) 85%, transparent);
 }
 
 .tc-button:focus-visible {
@@ -150,6 +152,11 @@
 .tc-button--ghost {
   background-color: transparent;
   color: var(--tc-text);
+  border-color: color-mix(in srgb, var(--tc-text) 18%, transparent);
+}
+
+.tc-button--ghost:hover {
+  background-color: color-mix(in srgb, var(--tc-text) 6%, transparent);
   border-color: color-mix(in srgb, var(--tc-text) 18%, transparent);
 }
 
@@ -463,11 +470,11 @@
   line-height: 1.2;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
   cursor: pointer;
-  transition: transform 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .tc-float:hover {
-  transform: translateY(-1px);
+  background-color: color-mix(in srgb, var(--tc-accent) 85%, transparent);
 }
 
 .tc-float_icon {
