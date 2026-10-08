@@ -301,8 +301,39 @@ html:not(.doc-preview-on) [data-tc="root"] {
   background: color-mix(in srgb, var(--tc-bg) 88%, var(--tc-text));
 }
 
+.doc-preview-bar_group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.doc-preview-bar_chip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.doc-preview-bar_chip:hover {
+  opacity: 1;
+}
+
+.doc-preview-bar_chip.is-active {
+  background: var(--tc-bg);
+  color: var(--tc-text);
+  opacity: 1;
+}
+
 @media (max-width: 720px) {
-  .doc-preview-bar span {
+  .doc-preview-bar > span:first-child {
     display: none;
   }
 }

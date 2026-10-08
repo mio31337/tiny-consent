@@ -5,11 +5,11 @@ A small first-party cookie consent kit for Webflow projects. One static script b
 - No server, no account, no per-site plan. Consent lives in a first-party cookie.
 - Banner and preferences panel are regular Webflow elements. The script only reads `data-tc` attributes.
 - Scripts, iframes, and images stay blocked until their category is allowed. Known tracker hosts are blocked even when you forget to tag them.
-- Honors Global Privacy Control, supports opt-in (GDPR) and opt-out (CCPA) modes.
+- Honors Global Privacy Control. Opt-in (GDPR) and opt-out (CCPA) modes, or rules by region: GDPR banner in Europe, opt-out notice in US privacy states, no banner elsewhere.
 
 ## Contents
 
-- `src/` script source (`tiny-consent.js` entry, `consent.js`, `blocker.js`, `ui.js`, `blocklist.js`)
+- `src/` script source (`tiny-consent.js` entry, `consent.js`, `blocker.js`, `ui.js`, `blocklist.js`, `vendors.js`, `cleanup.js`, `geo.js`)
 - `dist/` built bundle to host (`tiny-consent.js`, `tiny-consent.min.js`)
 - `demo/index.html` onboarding docs: the setup steps with copy buttons, a head-code configurator, **Copy component for Webflow**, and a live preview of the component (the exact tree, driven by the real script)
 - `demo/webflow-paste.js` turns the component tree in `index.html` and `tiny-consent-theme.css` into a Webflow clipboard payload
@@ -48,6 +48,10 @@ Site settings → Custom code → **Head code**. Put this first, before any anal
 | `data-tc-cookie-name` | `tc_consent` | Cookie name. |
 | `data-tc-purge` | `true` | Delete the known cookies of vendors in denied categories (on load, after every change, and when the page is left). Set `false` to leave cookies alone. |
 | `data-tc-vendors` | | Vendor ids to list in the panel even when nothing on the page matches them (server-side tags), e.g. `meta-pixel, hubspot`. See [Vendor list](#vendor-list). |
+| `data-tc-geo` | | Rules by region. `auto`: IP lookup with timezone fallback. `timezone`: browser timezone only, no request. Overrides `data-tc-mode`. See [Rules by region](#rules-by-region). |
+| `data-tc-regions` | see below | Region → policy table, `key:policy` comma separated. Policies: `opt-in`, `opt-out`, `none`. |
+| `data-tc-geo-url` | geojs.io | Your own lookup endpoint for `auto`. JSON with `country_code`/`country` and `region_code`/`region`, or Cloudflare `cdn-cgi/trace` text. |
+| `data-tc-region` | | Force a region (`us-ca`, `de`, `eu`) and skip detection. Also `window.TinyConsentRegion`. |
 
 Then publish. Tags added under Webflow **Apps & Integrations** (the Google Analytics and Facebook Pixel fields) load before custom code and cannot be blocked. Paste those snippets into Head code instead.
 
@@ -211,6 +215,29 @@ In Webflow, create a variable collection with the same seven values and bind the
 - Global Privacy Control (`navigator.globalPrivacyControl`): marketing is denied by default in opt-out mode.
 - Escape closes the preferences panel. Closing without a stored choice returns to the banner.
 
+### Rules by region
+
+With `data-tc-geo="auto"` the banner follows the visitor's law instead of one global mode. Every page view starts strict (nothing optional runs, banner hidden), the region is resolved, then the policy for that region applies. A stored choice always wins; an unknown region gets the opt-in banner.
+
+| Policy | Default regions | Before a choice |
+| --- | --- | --- |
+| `opt-in` | `eu` (EU + EEA), `gb`, `ch`, `br`, `ca-qc` | Nothing optional runs, the banner asks. |
+| `opt-out` | `us-ca`, `us-va`, `us-co`, `us-ct`, `us-ut`, `us-tx`, `us-or`, `us-mt`, `us-ia`, `us-de`, `us-nh`, `us-nj`, `us-tn`, `us-mn`, `us-md`, `us-in`, `us-ky`, `us-ne`, `us-ri` | Everything runs (marketing off under GPC), the banner is a notice with *Do not sell or share*. |
+| `none` | `*` | No banner, consent is recorded as granted, the Preferences button stays. |
+
+`data-tc-regions` replaces the table; the most specific key wins (`us-ca` over `us` over `eu` over `*`). `data-tc-regions="eu:opt-in, gb:opt-in, us-ca:opt-out, *:opt-in"` asks everyone outside the listed regions too.
+
+Detection: `auto` fetches `https://get.geojs.io/v1/ip/geo.json` once per session (no cookies, result in `sessionStorage`), or your `data-tc-geo-url`; on failure it falls back to the browser timezone. `timezone` never makes a request and is coarse: a European zone is treated as `eu`, a US zone takes the strictest `us-*` policy in the table, so an uncertain guess never relaxes the rules. Name the lookup service in your privacy policy.
+
+Component copy per policy: give any element inside the component `data-tc-variant="opt-in"`, `"opt-out"`, `"none"`, or several space separated, and it shows only under those policies. The shipped banner has GDPR text with *Reject all* / *Accept all* and CCPA text with *Do not sell or share* / *OK*. `<html>` carries `data-tc-policy` and `data-tc-region` for your own CSS.
+
+```js
+TinyConsent.getRegion()        // { country, region?, source, policy } or null
+TinyConsent.getPolicy()        // 'opt-in' | 'opt-out' | 'none'
+TinyConsent.setRegion('us-ca') // force a region; re-applies the policy if no choice is stored
+document.addEventListener('tc:region', e => e.detail) // { region, policy }
+```
+
 ### Public API and events
 
 ```js
@@ -239,4 +266,4 @@ Use `tc:consent` to update Google Consent Mode or push to a GTM `dataLayer` if y
 
 ## Scope
 
-This kit covers the part of a consent tool that runs on the site. The vendor list reflects the tags present in the page the visitor is looking at, matched against a fixed registry; a crawl of the whole site, consent-log storage and analytics, region-specific banners, AI tracker descriptions, and policy-page generation are separate products and are out of scope here. The kit does not provide legal advice; which categories you need and what your policy says is still your call.
+This kit covers the part of a consent tool that runs on the site. The vendor list reflects the tags present in the page the visitor is looking at, matched against a fixed registry; a crawl of the whole site, consent-log storage and analytics, AI tracker descriptions, and policy-page generation are separate products and are out of scope here. The kit does not provide legal advice; which categories you need and what your policy says is still your call.

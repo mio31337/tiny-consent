@@ -50,12 +50,14 @@
   function renderHead() {
     const data = new FormData(config);
     const url = SCRIPT_URL;
-    const mode = data.get('mode') === 'opt-out' ? 'opt-out' : 'opt-in';
+    const rule = String(data.get('mode') || 'opt-in');
     const days = Number(data.get('days')) || 180;
     const block = String(data.get('block') || '').trim();
     // Only emit attributes that differ from the script's defaults (opt-in, 180 days).
     const lines = [`<script src="${url}"`];
-    if (mode !== 'opt-in') lines.push(`        data-tc-mode="${mode}"`);
+    if (rule === 'opt-out') lines.push(`        data-tc-mode="opt-out"`);
+    if (rule === 'geo') lines.push(`        data-tc-geo="auto"`);
+    if (rule === 'geo-timezone') lines.push(`        data-tc-geo="timezone"`);
     if (days !== 180) lines.push(`        data-tc-cookie-days="${days}"`);
     if (block) lines.push(`        data-tc-block="${block.replace(/"/g, '')}"`);
     headSnippet.textContent = lines.join('\n') + '></script>';
@@ -129,6 +131,32 @@
     document.documentElement.classList.remove('doc-preview-on');
     previewBar.hidden = true;
   }
+
+  // Region switcher: the docs load the script with a forced region (data-tc-region="eu"),
+  // so the same policy table a geolocated site uses decides what each region sees.
+  const previewLabel = previewBar ? previewBar.querySelector('span') : null;
+  const POLICY_LABEL = {
+    'opt-in': 'Live preview: GDPR banner, trackers wait',
+    'opt-out': 'Live preview: CCPA notice, trackers run until opted out',
+    none: 'Live preview: no banner required, only the Preferences button',
+  };
+
+  function describePolicy() {
+    if (!tc || !previewLabel) return;
+    previewLabel.textContent = POLICY_LABEL[tc.getPolicy()] || 'Live preview';
+  }
+
+  document.querySelectorAll('[data-preview-region]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      if (!tc) return;
+      document.querySelectorAll('[data-preview-region]').forEach((c) => c.classList.toggle('is-active', c === chip));
+      tc.setRegion(chip.dataset.previewRegion);
+      tc.reset();
+      describePolicy();
+    });
+  });
+  document.addEventListener('tc:region', describePolicy);
+  describePolicy();
 
   document.querySelectorAll('[data-preview]').forEach((button) => {
     button.addEventListener('click', () => {

@@ -10,7 +10,7 @@
     "Live preview" is pressed (see html:not(.doc-preview-on) in docs.css).
     Reload is off so Reject-all after Accept-all does not reload the docs.
   -->
-  <script src="../dist/tiny-consent.js" data-tc-mode="opt-in" data-tc-cookie-days="180" data-tc-reload="false" data-tc-vendors="google-analytics, meta-pixel, intercom"></script>
+  <script src="../dist/tiny-consent.js" data-tc-region="eu" data-tc-reload="false" data-tc-vendors="google-analytics, meta-pixel, intercom"></script>
   <link rel="stylesheet" href="./tiny-consent-theme.css" />
   <link rel="stylesheet" href="./demo.css" />
   <link rel="stylesheet" href="./docs.css" />
@@ -45,9 +45,10 @@
           <button type="button" class="demo-btn demo-btn--ghost doc-btn-lg" data-preview="launch">Preview the banner</button>
         </div>
         <ul class="doc-facts" aria-label="At a glance">
-          <li>26 KB script, served from jsDelivr</li>
+          <li>12 KB script (gzipped), served from jsDelivr</li>
           <li>No account, no per-site plan</li>
           <li>Five steps, about 20 minutes</li>
+          <li>Rules by region: GDPR, CCPA, or no banner</li>
           <li>Honors Global Privacy Control</li>
         </ul>
       </div>
@@ -65,7 +66,8 @@
                   <h2 class="tc-title">We use cookies</h2>
                 </div>
                 <p class="tc-text">
-                  Essential cookies keep the site working. With your permission we also use analytics and marketing cookies.
+                  Essential cookies keep the site working. With your permission we also use analytics, marketing, and
+                  personalization cookies. You can change your choice at any time.
                 </p>
                 <span class="tc-link">Privacy policy</span>
               </div>
@@ -137,10 +139,12 @@
           </p>
           <form class="doc-config" id="config">
             <label>
-              <span>Mode</span>
+              <span>Rules</span>
               <select name="mode">
-                <option value="opt-in">opt-in (GDPR): optional trackers wait for consent</option>
-                <option value="opt-out">opt-out (CCPA): everything runs until rejected</option>
+                <option value="opt-in">Everyone: opt-in banner (GDPR rules for all visitors)</option>
+                <option value="geo">By region: GDPR banner in Europe, opt-out notice in US privacy states, none elsewhere</option>
+                <option value="geo-timezone">By region, timezone only: same rules, no IP lookup, coarser</option>
+                <option value="opt-out">Everyone: opt-out notice (CCPA rules for all visitors)</option>
               </select>
             </label>
             <label>
@@ -163,6 +167,39 @@
               custom code and cannot be blocked; paste those snippets into Head code instead.
             </p>
           </div>
+          <details class="doc-details" id="geo-details">
+            <summary>Rules by region: how geolocation works</summary>
+            <p>
+                With <code>data-tc-geo</code> the script starts strict on every page view (nothing optional runs, no
+                banner), finds out where the visitor is, then applies the rule for that region. A choice the visitor
+                already made always wins; if the region cannot be determined the visitor gets the opt-in banner.
+              </p>
+              <ul class="doc-list">
+                <li><strong>opt-in</strong> (EU/EEA, UK, Switzerland, Brazil, Quebec): trackers wait, the banner asks.</li>
+                <li><strong>opt-out</strong> (California and the other US states with a privacy law): trackers run, the banner is a notice with <em>Do not sell or share</em>. A Global Privacy Control signal turns marketing off regardless.</li>
+                <li><strong>none</strong> (everywhere else): no banner; the Preferences button stays so anyone can still opt out.</li>
+              </ul>
+              <p>
+                Override the table with <code>data-tc-regions</code>, most specific key wins:
+                <code>data-tc-regions="eu:opt-in, gb:opt-in, us-ca:opt-out, *:opt-in"</code> asks everyone outside the
+                listed regions too. Keys are country codes (<code>de</code>), country-region (<code>us-ca</code>,
+                <code>ca-qc</code>), the group <code>eu</code>, or <code>*</code>.
+              </p>
+              <p>
+                <code>auto</code> asks <a href="https://www.geojs.io/" target="_blank" rel="noopener">geojs.io</a> for the
+                visitor's country and region (one request per session, no cookies, result kept in
+                <code>sessionStorage</code>) and falls back to the browser timezone when that fails. Mention the lookup
+                in your privacy policy, or point <code>data-tc-geo-url</code> at your own endpoint. <code>timezone</code>
+                makes no request at all but only knows continents: European zones get the GDPR banner, US zones the
+                opt-out notice.
+              </p>
+              <p>
+                Test a region with <code>data-tc-region="us-ca"</code> on the script tag or
+                <code>TinyConsent.setRegion('de')</code> in the console. The banner copy switches with
+                <code>data-tc-variant="opt-in opt-out none"</code> on any element inside the component; the pasted
+                component ships GDPR and CCPA wording.
+              </p>
+          </details>
           <p class="doc-note">
             <code>@main</code> always serves the latest build. To control when a site updates, replace it with a tag or
             commit, e.g. <code>@v1.0.0</code>.
@@ -288,6 +325,7 @@
                   <tr><td><code>data-tc-element="chevron"</code></td><td>icon inside the toggle</td><td>Gets <code>is-open</code> and rotates 180° while its accordion is open.</td></tr>
                   <tr><td><code>data-tc-vendor="sample"</code></td><td>vendor div inside the row details</td><td>Template for the generated vendor cards; removed on the published site. Any other value marks a hand-written card that stays.</td></tr>
                   <tr><td><code>data-tc-field="…"</code></td><td>inside the vendor template</td><td><code>vendor-name</code>, <code>vendor-privacy</code> (link), <code>cookie</code> (repeated per cookie), <code>cookie-name</code>, <code>cookie-purpose</code>, <code>cookie-duration</code>; <code>empty</code> on the per-row message.</td></tr>
+                  <tr><td><code>data-tc-variant="…"</code></td><td>banner text, buttons, anything</td><td>Shows the element only under the listed rules: <code>opt-in</code>, <code>opt-out</code>, <code>none</code>, space separated. The banner ships a GDPR text with <em>Reject all</em> and a CCPA text with <em>Do not sell or share</em>. Without geolocation the rule is the script's mode, so a plain opt-in site shows the GDPR copy.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -362,7 +400,12 @@
 
   <!-- Shown while the live preview is running. -->
   <div class="doc-preview-bar" id="preview-bar" hidden>
-    <span>Live preview: this is the real component</span>
+    <span>Live preview</span>
+    <span class="doc-preview-bar_group" role="group" aria-label="Visitor region">
+      <button type="button" class="doc-preview-bar_chip is-active" data-preview-region="eu">EU</button>
+      <button type="button" class="doc-preview-bar_chip" data-preview-region="us-ca">California</button>
+      <button type="button" class="doc-preview-bar_chip" data-preview-region="us-ny">New York</button>
+    </span>
     <button type="button" class="doc-preview-bar_btn" data-preview="restart">Show banner again</button>
     <button type="button" class="doc-preview-bar_btn doc-preview-bar_btn--primary" data-preview="exit">Exit preview</button>
   </div>
@@ -383,15 +426,23 @@
           <span class="tc-brand_mark" aria-hidden="true"></span>
           <h2 class="tc-title" id="tc-banner-title">We use cookies</h2>
         </div>
-        <p class="tc-text" id="tc-banner-text">
-          Essential cookies keep the site working. With your permission we also use analytics and marketing cookies.
+        <!-- data-tc-variant lists the policies an element shows under: opt-in (GDPR), opt-out (CCPA), none. -->
+        <p class="tc-text" id="tc-banner-text" data-tc-variant="opt-in none">
+          Essential cookies keep the site working. With your permission we also use analytics, marketing, and
+          personalization cookies. You can change your choice at any time.
+        </p>
+        <p class="tc-text" data-tc-variant="opt-out">
+          We use cookies for analytics, marketing, and personalization. You can opt out of the sale or sharing of your
+          personal information at any time.
         </p>
         <a href="#" class="tc-link">Privacy policy</a>
       </div>
       <div class="tc-actions">
-        <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all">Reject all</button>
+        <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all" data-tc-variant="opt-in none">Reject all</button>
+        <button type="button" class="tc-button tc-button--ghost" data-tc-action="reject-all" data-tc-variant="opt-out">Do not sell or share</button>
         <button type="button" class="tc-button tc-button--ghost" data-tc-action="open-preferences">Preferences</button>
-        <button type="button" class="tc-button" data-tc-action="accept-all">Accept all</button>
+        <button type="button" class="tc-button" data-tc-action="accept-all" data-tc-variant="opt-in none">Accept all</button>
+        <button type="button" class="tc-button" data-tc-action="accept-all" data-tc-variant="opt-out">OK</button>
       </div>
     </div>
 

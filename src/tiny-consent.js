@@ -4,11 +4,17 @@
 //           data-tc-mode="opt-in"
 //           data-tc-cookie-days="180"
 //           data-tc-block="cdn.example.com:analytics"
-//           data-tc-vendors="meta-pixel"></script>
+//           data-tc-vendors="meta-pixel"
+//           data-tc-geo="auto"
+//           data-tc-regions="eu:opt-in, us-ca:opt-out, *:none"></script>
 //
 // The preferences panel lists the vendors detected on the page (see vendors.js).
 // `data-tc-vendors` forces registry entries in; `window.TinyConsentVendors` adds or
 // overrides entries per site.
+//
+// With `data-tc-geo` the rules depend on where the visitor is (see geo.js): the script
+// starts strict, resolves the region, then shows the opt-in banner, an opt-out notice, or
+// nothing. `data-tc-region="us-ca"` (or `window.TinyConsentRegion`) forces a region.
 
 import {
   COOKIE_NAME,
@@ -29,17 +35,20 @@ import defaultPatterns from './blocklist.js';
 import { bindUI } from './ui.js';
 import { cookiePatternsFor, detectVendors } from './vendors.js';
 import { purgeCookies } from './cleanup.js';
+import { DEFAULT_REGIONS, POLICIES, createGeoResolver, parseRegionCode, parseRegions, policyFor } from './geo.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 // Injected only when the script runs, so the Designer canvas shows everything.
+// Elements with data-tc-variant="opt-in opt-out none" show only under the listed policies.
 const BOOT_CSS = [
   'html.tc-boot [data-tc="root"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="banner"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc="float"]:not([data-tc-visible="true"]),',
   'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"],',
-  'html.tc-boot [data-tc="root"] [hidden]',
+  'html.tc-boot [data-tc="root"] [hidden],',
+  POLICIES.map((p) => `html.tc-boot[data-tc-policy="${p}"] [data-tc-variant]:not([data-tc-variant~="${p}"])`).join(','),
   '{display:none!important}',
   'html.tc-boot [data-tc-element="chevron"]{transition:transform 150ms ease}',
   'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>[data-tc-element="chevron"],',
@@ -62,6 +71,10 @@ function readConfig(script) {
     vendors: attr('data-tc-vendors', '')
       .split(/[\s,]+/)
       .filter(Boolean),
+    geo: ['auto', 'timezone'].includes(attr('data-tc-geo', '')) ? attr('data-tc-geo', '') : '',
+    geoUrl: attr('data-tc-geo-url', ''),
+    region: attr('data-tc-region', ''),
+    regions: attr('data-tc-regions', DEFAULT_REGIONS),
   };
 }
 
@@ -74,7 +87,15 @@ function readConfig(script) {
   const patterns = parseBlockAttr(config.block).concat(defaultPatterns);
   const secure = Boolean(win.location && win.location.protocol === 'https:');
 
-  let consent = parseConsent(readCookie(doc.cookie, config.cookieName)) || defaultConsent({ mode: config.mode, gpc });
+  // Geolocation: the region table decides the policy; `mode` only applies when geo is off.
+  // Until the region is known everything optional stays blocked (opt-in), the banner waits.
+  const geoOn = Boolean(config.geo || config.region || win.TinyConsentRegion);
+  const regionTable = parseRegions(config.regions);
+  let region = null;
+  let policy = geoOn ? 'opt-in' : config.mode;
+  const resolver = createGeoResolver({ win, source: config.geo, url: config.geoUrl, forced: config.region });
+
+  let consent = parseConsent(readCookie(doc.cookie, config.cookieName)) || defaultConsent({ mode: policy, gpc });
   let ui = null;
 
   const emit = (name, detail) => doc.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
@@ -95,6 +116,7 @@ function readConfig(script) {
   style.textContent = BOOT_CSS;
   (doc.head || doc.documentElement).appendChild(style);
   doc.documentElement.classList.add('tc-boot');
+  doc.documentElement.setAttribute('data-tc-policy', policy);
 
   function persist() {
     doc.cookie = cookieString(config.cookieName, serializeConsent(consent), { days: config.cookieDays, secure });
@@ -148,15 +170,53 @@ function readConfig(script) {
     }
   }
 
+  /** Puts the page in the state a new visitor from the current region would see. */
+  function applyPolicy() {
+    doc.documentElement.setAttribute('data-tc-policy', policy);
+    if (consent.chosen) return;
+    if (policy === 'none') {
+      // No consent requirement here: record a choice so the banner never shows,
+      // keep the Preferences button, and still honor a Global Privacy Control signal.
+      apply({ ...allConsent(true), marketing: !gpc });
+      return;
+    }
+    const next = defaultConsent({ mode: policy, gpc });
+    if (OPTIONAL_CATEGORIES.some((category) => next[category] !== consent[category])) {
+      consent = next;
+      if (ui) ui.sync(consent);
+      blocker.activate();
+      emit('tc:consent', getConsent());
+    }
+    if (ui) ui.showBanner();
+  }
+
+  function setRegion(code) {
+    const next = typeof code === 'string' ? parseRegionCode(code) : code;
+    if (!next || !next.country) return;
+    region = next;
+    policy = geoOn ? policyFor(region, regionTable) : config.mode;
+    const label = region.region ? `${region.country}-${region.region}` : region.country;
+    doc.documentElement.setAttribute('data-tc-region', label);
+    emit('tc:region', { region: { ...region }, policy });
+    applyPolicy();
+  }
+
+  function resolveRegion() {
+    return resolver.resolve().then((found) => {
+      if (found && found.country) setRegion(found);
+      else applyPolicy(); // unknown: stay opt-in and ask
+      return region ? { ...region } : null;
+    });
+  }
+
   function reset() {
     doc.cookie = cookieString(config.cookieName, '', { days: -1, secure });
-    consent = defaultConsent({ mode: config.mode, gpc });
+    consent = defaultConsent({ mode: policy === 'none' ? 'opt-in' : policy, gpc });
     purge();
-    if (ui) {
-      ui.sync(consent);
-      ui.showBanner();
-    }
+    if (ui) ui.sync(consent);
     emit('tc:consent', getConsent());
+    if (geoOn && !region) resolveRegion();
+    else applyPolicy();
   }
 
   let vendors = [];
@@ -185,8 +245,11 @@ function readConfig(script) {
     ui.sync(consent);
     purge();
     blocker.activate();
-    if (!consent.chosen) ui.showBanner();
     emit('tc:consent', getConsent());
+    // Region is resolved even when a choice exists so data-tc-region and the variants are right;
+    // applyPolicy() leaves a stored choice alone.
+    if (geoOn) resolveRegion();
+    else applyPolicy();
   }
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', ready);
@@ -197,6 +260,9 @@ function readConfig(script) {
     version: VERSION,
     config: { ...config, gpc },
     getConsent,
+    getRegion: () => (region ? { ...region, policy } : null),
+    getPolicy: () => policy,
+    setRegion,
     isAllowed: (category) => isAllowed(consent, category),
     setConsent: apply,
     acceptAll: () => apply(allConsent(true)),

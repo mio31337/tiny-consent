@@ -792,15 +792,284 @@
     return targets.filter((name) => !remaining.has(name));
   }
 
+  // src/geo.js
+  var POLICIES = ["opt-in", "opt-out", "none"];
+  var EEA = [
+    "at",
+    "be",
+    "bg",
+    "hr",
+    "cy",
+    "cz",
+    "dk",
+    "ee",
+    "fi",
+    "fr",
+    "de",
+    "gr",
+    "hu",
+    "ie",
+    "it",
+    "lv",
+    "lt",
+    "lu",
+    "mt",
+    "nl",
+    "pl",
+    "pt",
+    "ro",
+    "sk",
+    "si",
+    "es",
+    "se",
+    // EU 27
+    "is",
+    "li",
+    "no"
+    // EEA
+  ];
+  var GROUPS = {
+    eu: EEA,
+    eea: EEA,
+    uk: ["gb"]
+  };
+  var US_OPT_OUT = ["ca", "va", "co", "ct", "ut", "tx", "or", "mt", "ia", "de", "nh", "nj", "tn", "mn", "md", "in", "ky", "ne", "ri"];
+  var DEFAULT_REGIONS = ["eu:opt-in", "gb:opt-in", "ch:opt-in", "br:opt-in", "ca-qc:opt-in"].concat(US_OPT_OUT.map((state) => `us-${state}:opt-out`)).concat(["*:none"]).join(", ");
+  function parseRegions(attr) {
+    const table = /* @__PURE__ */ new Map();
+    for (const entry of String(attr || "").split(/[\s,]+/)) {
+      const colon = entry.lastIndexOf(":");
+      if (colon < 0) continue;
+      const key = entry.slice(0, colon).trim().toLowerCase();
+      const policy = entry.slice(colon + 1).trim().toLowerCase();
+      if (key && POLICIES.includes(policy)) table.set(key, policy);
+    }
+    return table;
+  }
+  var STRICTNESS = { "opt-in": 2, "opt-out": 1, none: 0 };
+  function stricter(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    return STRICTNESS[a] >= STRICTNESS[b] ? a : b;
+  }
+  function groupsOf(country) {
+    return Object.keys(GROUPS).filter((name) => GROUPS[name].includes(country));
+  }
+  function policyFor(region, table) {
+    const map = table instanceof Map ? table : parseRegions(table || DEFAULT_REGIONS);
+    if (!region || !region.country) return "opt-in";
+    const country = String(region.country).toLowerCase();
+    const sub = region.region ? String(region.region).toLowerCase() : "";
+    const fallback = map.get("*") || "opt-in";
+    if (!region.coarse) {
+      if (sub && map.has(`${country}-${sub}`)) return map.get(`${country}-${sub}`);
+      if (map.has(country)) return map.get(country);
+      for (const name of groupsOf(country)) if (map.has(name)) return map.get(name);
+      return fallback;
+    }
+    let policy = null;
+    if (map.has(country)) policy = stricter(policy, map.get(country));
+    for (const name of groupsOf(country)) if (map.has(name)) policy = stricter(policy, map.get(name));
+    if (GROUPS[country]) {
+      for (const member of GROUPS[country]) {
+        if (map.has(member)) policy = stricter(policy, map.get(member));
+      }
+    }
+    const prefix = `${country}-`;
+    for (const [key, value] of map) if (key.startsWith(prefix)) policy = stricter(policy, value);
+    return policy || fallback;
+  }
+  var EU_ZONES = /^(Europe\/|Atlantic\/(Reykjavik|Canary|Madeira|Azores|Faroe|Faeroe)$)/;
+  var US_ZONES = /^(US\/|Pacific\/Honolulu$|America\/(New_York|Detroit|Kentucky\/|Indiana\/|Chicago|Menominee|North_Dakota\/|Denver|Boise|Phoenix|Los_Angeles|Anchorage|Juneau|Sitka|Metlakatla|Yakutat|Nome|Adak))/;
+  var CA_ZONES = /^(Canada\/|America\/(Toronto|Montreal|Vancouver|Edmonton|Winnipeg|Halifax|St_Johns|Regina|Moncton|Glace_Bay|Goose_Bay|Iqaluit|Whitehorse|Dawson|Yellowknife|Inuvik|Rankin_Inlet|Resolute|Cambridge_Bay|Swift_Current|Fort_Nelson|Creston|Blanc-Sablon|Atikokan))/;
+  var BR_ZONES = /^(Brazil\/|America\/(Sao_Paulo|Bahia|Fortaleza|Recife|Belem|Manaus|Maceio|Araguaina|Campo_Grande|Cuiaba|Porto_Velho|Boa_Vista|Rio_Branco|Eirunepe|Santarem|Noronha))/;
+  function regionFromTimezone(tz) {
+    const zone = String(tz || "");
+    if (!zone) return null;
+    if (EU_ZONES.test(zone)) return { country: "eu", coarse: true, source: "timezone" };
+    if (US_ZONES.test(zone)) return { country: "us", coarse: true, source: "timezone" };
+    if (CA_ZONES.test(zone)) return { country: "ca", coarse: true, source: "timezone" };
+    if (BR_ZONES.test(zone)) return { country: "br", coarse: true, source: "timezone" };
+    if (/^(Africa|Asia|Australia|Pacific|Indian|Antarctica|America|Atlantic)\//.test(zone)) {
+      return { country: "*", coarse: true, source: "timezone" };
+    }
+    return null;
+  }
+  var US_STATES = {
+    alabama: "al",
+    alaska: "ak",
+    arizona: "az",
+    arkansas: "ar",
+    california: "ca",
+    colorado: "co",
+    connecticut: "ct",
+    delaware: "de",
+    "district of columbia": "dc",
+    florida: "fl",
+    georgia: "ga",
+    hawaii: "hi",
+    idaho: "id",
+    illinois: "il",
+    indiana: "in",
+    iowa: "ia",
+    kansas: "ks",
+    kentucky: "ky",
+    louisiana: "la",
+    maine: "me",
+    maryland: "md",
+    massachusetts: "ma",
+    michigan: "mi",
+    minnesota: "mn",
+    mississippi: "ms",
+    missouri: "mo",
+    montana: "mt",
+    nebraska: "ne",
+    nevada: "nv",
+    "new hampshire": "nh",
+    "new jersey": "nj",
+    "new mexico": "nm",
+    "new york": "ny",
+    "north carolina": "nc",
+    "north dakota": "nd",
+    ohio: "oh",
+    oklahoma: "ok",
+    oregon: "or",
+    pennsylvania: "pa",
+    "rhode island": "ri",
+    "south carolina": "sc",
+    "south dakota": "sd",
+    tennessee: "tn",
+    texas: "tx",
+    utah: "ut",
+    vermont: "vt",
+    virginia: "va",
+    washington: "wa",
+    "west virginia": "wv",
+    wisconsin: "wi",
+    wyoming: "wy"
+  };
+  var CA_PROVINCES = {
+    alberta: "ab",
+    "british columbia": "bc",
+    manitoba: "mb",
+    "new brunswick": "nb",
+    "newfoundland and labrador": "nl",
+    "nova scotia": "ns",
+    ontario: "on",
+    "prince edward island": "pe",
+    quebec: "qc",
+    "qu\xE9bec": "qc",
+    saskatchewan: "sk",
+    "northwest territories": "nt",
+    nunavut: "nu",
+    yukon: "yt"
+  };
+  function pick(data, keys) {
+    for (const key of keys) {
+      const value = data[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    return "";
+  }
+  function parseLookup(payload) {
+    let data = payload;
+    if (typeof payload === "string") {
+      const text = payload.trim();
+      if (text.startsWith("{")) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          return null;
+        }
+      } else {
+        data = {};
+        for (const line of text.split(/\r?\n/)) {
+          const eq = line.indexOf("=");
+          if (eq > 0) data[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+        }
+      }
+    }
+    if (!data || typeof data !== "object") return null;
+    const country = pick(data, ["country_code", "countryCode", "country_code2", "country", "loc"]).toLowerCase();
+    if (!/^[a-z]{2}$/.test(country)) return null;
+    let region = pick(data, ["region_code", "regionCode", "region_iso_code", "state_code", "region", "state"]).toLowerCase();
+    if (region.includes("-")) region = region.split("-").pop();
+    if (region && !/^[a-z0-9]{1,3}$/.test(region)) {
+      const names = country === "us" ? US_STATES : country === "ca" ? CA_PROVINCES : {};
+      region = names[region] || "";
+    }
+    return region ? { country, region } : { country };
+  }
+  var DEFAULT_LOOKUP_URL = "https://get.geojs.io/v1/ip/geo.json";
+  var STORAGE_KEY = "tc_region";
+  function parseRegionCode(code) {
+    const value = String(code || "").trim().toLowerCase();
+    if (!value) return null;
+    const [country, region] = value.split("-");
+    if (!country) return null;
+    return region ? { country, region, source: "forced" } : { country, source: "forced" };
+  }
+  function createGeoResolver({ win, source, url, forced, timeoutMs = 1500 }) {
+    function fromTimezone() {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return regionFromTimezone(tz);
+      } catch (e) {
+        return null;
+      }
+    }
+    function readCache() {
+      try {
+        const raw = win.sessionStorage && win.sessionStorage.getItem(STORAGE_KEY);
+        const data = raw ? JSON.parse(raw) : null;
+        return data && data.country ? { ...data, source: "cache" } : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    function writeCache(region) {
+      try {
+        if (win.sessionStorage) win.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ country: region.country, region: region.region }));
+      } catch (e) {
+      }
+    }
+    function lookup() {
+      if (typeof win.fetch !== "function") return Promise.resolve(null);
+      const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = setTimeout(() => controller && controller.abort(), timeoutMs);
+      return win.fetch(url || DEFAULT_LOOKUP_URL, { mode: "cors", credentials: "omit", cache: "no-store", signal: controller ? controller.signal : void 0 }).then((res) => res.ok ? res.text() : null).then((text) => {
+        const region = text ? parseLookup(text) : null;
+        return region ? { ...region, source: "lookup" } : null;
+      }).catch(() => null).finally(() => clearTimeout(timer));
+    }
+    function resolve() {
+      const override = parseRegionCode(forced || win.TinyConsentRegion);
+      if (override) return Promise.resolve(override);
+      if (source === "timezone") return Promise.resolve(fromTimezone() || { country: null, source: "unknown" });
+      if (source !== "auto") return Promise.resolve({ country: null, source: "off" });
+      const cached = readCache();
+      if (cached) return Promise.resolve(cached);
+      return lookup().then((region) => {
+        if (region) {
+          writeCache(region);
+          return region;
+        }
+        return fromTimezone() || { country: null, source: "unknown" };
+      });
+    }
+    return { resolve };
+  }
+
   // src/tiny-consent.js
-  var VERSION2 = "0.1.0";
+  var VERSION2 = "0.2.0";
   var BOOT_CSS = [
     'html.tc-boot [data-tc="root"]:not([data-tc-visible="true"]),',
     'html.tc-boot [data-tc="banner"]:not([data-tc-visible="true"]),',
     'html.tc-boot [data-tc="preferences"]:not([data-tc-visible="true"]),',
     'html.tc-boot [data-tc="float"]:not([data-tc-visible="true"]),',
     'html.tc-boot [data-tc-element="accordion"]:not([data-tc-open="true"]) [data-tc-element="details"],',
-    'html.tc-boot [data-tc="root"] [hidden]',
+    'html.tc-boot [data-tc="root"] [hidden],',
+    POLICIES.map((p) => `html.tc-boot[data-tc-policy="${p}"] [data-tc-variant]:not([data-tc-variant~="${p}"])`).join(","),
     "{display:none!important}",
     'html.tc-boot [data-tc-element="chevron"]{transition:transform 150ms ease}',
     'html.tc-boot [data-tc-element="accordion"][data-tc-open="true"]>[data-tc-element="chevron"],',
@@ -819,7 +1088,11 @@
       reload: attr("data-tc-reload", "true") !== "false",
       block: attr("data-tc-block", ""),
       purge: attr("data-tc-purge", "true") !== "false",
-      vendors: attr("data-tc-vendors", "").split(/[\s,]+/).filter(Boolean)
+      vendors: attr("data-tc-vendors", "").split(/[\s,]+/).filter(Boolean),
+      geo: ["auto", "timezone"].includes(attr("data-tc-geo", "")) ? attr("data-tc-geo", "") : "",
+      geoUrl: attr("data-tc-geo-url", ""),
+      region: attr("data-tc-region", ""),
+      regions: attr("data-tc-regions", DEFAULT_REGIONS)
     };
   }
   (function init(win, doc) {
@@ -829,7 +1102,12 @@
     const gpc = Boolean(win.navigator && win.navigator.globalPrivacyControl === true);
     const patterns = parseBlockAttr(config.block).concat(blocklist_default);
     const secure = Boolean(win.location && win.location.protocol === "https:");
-    let consent = parseConsent(readCookie(doc.cookie, config.cookieName)) || defaultConsent({ mode: config.mode, gpc });
+    const geoOn = Boolean(config.geo || config.region || win.TinyConsentRegion);
+    const regionTable = parseRegions(config.regions);
+    let region = null;
+    let policy = geoOn ? "opt-in" : config.mode;
+    const resolver = createGeoResolver({ win, source: config.geo, url: config.geoUrl, forced: config.region });
+    let consent = parseConsent(readCookie(doc.cookie, config.cookieName)) || defaultConsent({ mode: policy, gpc });
     let ui = null;
     const emit = (name, detail) => doc.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
     const getConsent = () => ({ ...consent });
@@ -847,6 +1125,7 @@
     style.textContent = BOOT_CSS;
     (doc.head || doc.documentElement).appendChild(style);
     doc.documentElement.classList.add("tc-boot");
+    doc.documentElement.setAttribute("data-tc-policy", policy);
     function persist() {
       doc.cookie = cookieString(config.cookieName, serializeConsent(consent), { days: config.cookieDays, secure });
     }
@@ -886,15 +1165,47 @@
         if (config.reload) win.location.reload();
       }
     }
+    function applyPolicy() {
+      doc.documentElement.setAttribute("data-tc-policy", policy);
+      if (consent.chosen) return;
+      if (policy === "none") {
+        apply({ ...allConsent(true), marketing: !gpc });
+        return;
+      }
+      const next = defaultConsent({ mode: policy, gpc });
+      if (OPTIONAL_CATEGORIES.some((category) => next[category] !== consent[category])) {
+        consent = next;
+        if (ui) ui.sync(consent);
+        blocker.activate();
+        emit("tc:consent", getConsent());
+      }
+      if (ui) ui.showBanner();
+    }
+    function setRegion(code) {
+      const next = typeof code === "string" ? parseRegionCode(code) : code;
+      if (!next || !next.country) return;
+      region = next;
+      policy = geoOn ? policyFor(region, regionTable) : config.mode;
+      const label = region.region ? `${region.country}-${region.region}` : region.country;
+      doc.documentElement.setAttribute("data-tc-region", label);
+      emit("tc:region", { region: { ...region }, policy });
+      applyPolicy();
+    }
+    function resolveRegion() {
+      return resolver.resolve().then((found) => {
+        if (found && found.country) setRegion(found);
+        else applyPolicy();
+        return region ? { ...region } : null;
+      });
+    }
     function reset() {
       doc.cookie = cookieString(config.cookieName, "", { days: -1, secure });
-      consent = defaultConsent({ mode: config.mode, gpc });
+      consent = defaultConsent({ mode: policy === "none" ? "opt-in" : policy, gpc });
       purge();
-      if (ui) {
-        ui.sync(consent);
-        ui.showBanner();
-      }
+      if (ui) ui.sync(consent);
       emit("tc:consent", getConsent());
+      if (geoOn && !region) resolveRegion();
+      else applyPolicy();
     }
     let vendors = [];
     function refreshVendors() {
@@ -919,8 +1230,9 @@
       ui.sync(consent);
       purge();
       blocker.activate();
-      if (!consent.chosen) ui.showBanner();
       emit("tc:consent", getConsent());
+      if (geoOn) resolveRegion();
+      else applyPolicy();
     }
     if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", ready);
     else ready();
@@ -929,6 +1241,9 @@
       version: VERSION2,
       config: { ...config, gpc },
       getConsent,
+      getRegion: () => region ? { ...region, policy } : null,
+      getPolicy: () => policy,
+      setRegion,
       isAllowed: (category) => isAllowed(consent, category),
       setConsent: apply,
       acceptAll: () => apply(allConsent(true)),
