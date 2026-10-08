@@ -375,6 +375,17 @@
       });
       return out;
     }
+    function setClass(el, name, on) {
+      if (!el || !el.classList) return;
+      if (on) el.classList.add(name);
+      else el.classList.remove(name);
+    }
+    function reflect(input) {
+      const wrap = input.closest('[data-tc-element="switch"]') || input.parentElement;
+      if (!wrap || wrap === root) return;
+      setClass(wrap, "is-on", input.checked);
+      for (const child of wrap.children) setClass(child, "is-on", input.checked);
+    }
     function sync(consent) {
       chosen = Boolean(consent && consent.chosen);
       for (const { category, input } of rows()) {
@@ -383,6 +394,7 @@
           input.checked = true;
           input.disabled = true;
         }
+        reflect(input);
       }
       update();
     }
@@ -399,6 +411,10 @@
       const open = box.getAttribute("data-tc-open") !== "true";
       box.setAttribute("data-tc-open", open ? "true" : "false");
       target.setAttribute("aria-expanded", open ? "true" : "false");
+      setClass(box, "is-open", open);
+      setClass(target, "is-open", open);
+      const chevron = target.querySelector('[data-tc-element="chevron"]') || (target.matches('[data-tc-element="chevron"]') ? target : null);
+      setClass(chevron, "is-open", open);
     }
     function run(target, event) {
       const action = target.getAttribute("data-tc-action") || "open-preferences";
@@ -432,6 +448,11 @@
       const link = event.target.closest("a[href]");
       if (link && link !== target && target.contains(link)) return;
       run(target, event);
+    });
+    doc.addEventListener("change", (event) => {
+      const input = event.target;
+      if (!root || !input || !input.matches || !input.matches('input[type="checkbox"]') || !root.contains(input)) return;
+      if (input.closest("[data-tc-category]")) reflect(input);
     });
     doc.addEventListener("submit", (event) => {
       if (root && root.contains(event.target)) event.preventDefault();

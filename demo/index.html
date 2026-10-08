@@ -148,8 +148,9 @@
         </div>
         <p>
           The button below puts the banner and preferences panel on your clipboard in Webflow's own format: native
-          elements, classes with the default theme, and all <code>data-tc</code> attributes already set. Nothing is an
-          embed, so the Style panel works on every part.
+          elements (buttons, checkbox fields, links, headings), classes with the default theme, and all
+          <code>data-tc</code> attributes already set. Only the three icons are small inline SVG embeds; everything
+          else is editable in the Style panel.
         </p>
         <div class="doc-paste">
           <button type="button" class="demo-btn doc-paste_btn" id="copy-webflow" disabled>Copy component for Webflow</button>
@@ -160,8 +161,9 @@
           <li>Open your site in the Designer and select the <strong>footer</strong> (or any component that is already on every page). Edit the component so the paste lands inside it.</li>
           <li>Press <kbd>Cmd</kbd>+<kbd>V</kbd> (<kbd>Ctrl</kbd>+<kbd>V</kbd> on Windows). A <code>tc-root</code> div appears with three parts: the banner (bottom-right), the preferences panel, and a small <strong>Preferences</strong> button (bottom-left) that the script shows once a visitor has made a choice.</li>
           <li>Colors and fonts arrive as flat values from the default theme. Select <code>tc-banner</code>, <code>tc-dialog</code>, <code>tc-button</code>, and <code>tc-float</code> and swap them for your site's variables. Then style anything else; names, copy, and layout are free.</li>
-          <li>Each category row is an accordion. The chevron opens a list of vendors; each vendor opens its cookie table (name, purpose, duration). The vendors in the paste are samples. Replace them with what the site really uses, duplicate a <code>tc-vendor</code> div for each extra one, and give every Privacy policy link its real URL.</li>
-          <li>Leave the banner visible in the Designer. On the published site the script hides it until it is needed. Hide the preferences panel and the Preferences button while you work and set them back to visible before publishing. Accordion bodies are open in the Designer and start closed on the published site.</li>
+          <li>Each category row is an accordion. The chevron button opens a list of vendors; each vendor opens its cookie table (name, purpose, duration). The vendors in the paste are samples. Replace them with what the site really uses, duplicate a <code>tc-vendor</code> div for each extra one, and give every Privacy policy link its real URL.</li>
+          <li>Each optional category has a switch: a checkbox field (<code>tc-switch</code>) with an invisible input over a track and a knob. The script adds the combo class <code>is-on</code> to the switch and its children while the category is allowed, and <code>is-open</code> to an accordion, its chevron button, and the chevron icon while it is open. Both combos arrive with the paste (the Analytics switch is on and the Essential row is open), so style the on and open states on those combo classes.</li>
+          <li>Leave the banner visible in the Designer. On the published site the script hides it until it is needed. Hide the preferences panel and the Preferences button while you work and set them back to visible before publishing. Accordion bodies are visible in the Designer and start closed on the published site.</li>
         </ol>
         <details class="doc-details">
           <summary>What the attributes do (do not remove these)</summary>
@@ -171,17 +173,18 @@
               <tr><td><code>data-tc="root"</code></td><td>wrapper div</td><td>Everything must stay inside it.</td></tr>
               <tr><td><code>data-tc="banner"</code></td><td>banner div</td><td>Shown on first visit.</td></tr>
               <tr><td><code>data-tc="preferences"</code></td><td>panel div</td><td>Category panel. Hidden until opened.</td></tr>
-              <tr><td><code>data-tc="float"</code></td><td>small button div</td><td>Persistent "Preferences" button. Shown after a choice, hidden while the banner or panel is open.</td></tr>
+              <tr><td><code>data-tc="float"</code></td><td>small button</td><td>Persistent "Preferences" button. Shown after a choice, hidden while the banner or panel is open.</td></tr>
               <tr><td><code>data-tc-action="accept-all"</code></td><td>button</td><td>Allow every category.</td></tr>
               <tr><td><code>data-tc-action="reject-all"</code></td><td>button</td><td>Deny every optional category.</td></tr>
               <tr><td><code>data-tc-action="open-preferences"</code></td><td>button</td><td>Open the panel.</td></tr>
-              <tr><td><code>data-tc-action="save"</code></td><td>button</td><td>Store the checkbox selection.</td></tr>
+              <tr><td><code>data-tc-action="save"</code></td><td>button</td><td>Store the switch selection.</td></tr>
               <tr><td><code>data-tc-action="close"</code></td><td>button, backdrop</td><td>Close the panel.</td></tr>
-              <tr><td><code>data-tc-action="toggle"</code></td><td>chevron div</td><td>Opens and closes the accordion it sits in. Add <code>role="button"</code> and <code>tabindex="0"</code> for keyboard users.</td></tr>
-              <tr><td><code>data-tc-category="…"</code></td><td>row div around each checkbox</td><td>Which category the checkbox controls. The visible label text is yours to change. The Essential row has no checkbox, only a badge.</td></tr>
-              <tr><td><code>data-tc-element="accordion"</code></td><td>row div, vendor div</td><td>A collapsible box. The script sets <code>data-tc-open</code> on it.</td></tr>
+              <tr><td><code>data-tc-action="toggle"</code></td><td>chevron button</td><td>Opens and closes the accordion it sits in. On a div instead of a button, add <code>role="button"</code> and <code>tabindex="0"</code> for keyboard users.</td></tr>
+              <tr><td><code>data-tc-category="…"</code></td><td>row div around each switch</td><td>Which category the checkbox inside controls. The visible title is yours to change. The Essential row has no switch, only a badge.</td></tr>
+              <tr><td><code>data-tc-element="switch"</code></td><td>checkbox field</td><td>Gets the combo class <code>is-on</code> (together with its input, label, and knob) while the category is allowed.</td></tr>
+              <tr><td><code>data-tc-element="accordion"</code></td><td>row div, vendor div</td><td>A collapsible box. The script sets <code>data-tc-open</code> and the combo class <code>is-open</code> on it.</td></tr>
               <tr><td><code>data-tc-element="details"</code></td><td>div inside an accordion</td><td>Hidden while the accordion is closed.</td></tr>
-              <tr><td><code>data-tc-element="chevron"</code></td><td>the toggle div</td><td>Rotates 180° while its accordion is open.</td></tr>
+              <tr><td><code>data-tc-element="chevron"</code></td><td>icon inside the toggle</td><td>Gets <code>is-open</code> and rotates 180° while its accordion is open.</td></tr>
             </tbody>
           </table>
         </details>

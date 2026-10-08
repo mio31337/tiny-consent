@@ -23,9 +23,18 @@ const MARKUP = `
         </div>
       </div>
       <div data-tc-category="analytics" data-tc-element="accordion" id="analytics">
-        <div data-tc-action="toggle" role="button" tabindex="0" id="analytics-toggle"></div>
-        <label><input type="checkbox" /> Analytics</label>
+        <button type="button" data-tc-action="toggle" id="analytics-toggle">
+          <div data-tc-element="chevron" id="analytics-chevron"></div>
+        </button>
+        <div data-tc-element="switch" id="analytics-switch">
+          <input type="checkbox" id="analytics-input" name="Analytics" />
+          <label for="analytics-input">Analytics</label>
+          <div id="analytics-knob"></div>
+        </div>
         <div data-tc-element="details"></div>
+      </div>
+      <div data-tc-category="marketing" id="marketing">
+        <label id="marketing-label"><input type="checkbox" id="marketing-input" /> Marketing</label>
       </div>
       <button data-tc-action="save">Save</button>
     </form>
@@ -109,12 +118,59 @@ describe('accordion', () => {
 
   it('activates role="button" divs with Enter and Space', () => {
     setup();
-    const toggle = byId('analytics-toggle');
+    const toggle = byId('vendor-toggle');
     toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(byId('analytics').getAttribute('data-tc-open')).toBe('true');
+    expect(byId('vendor').getAttribute('data-tc-open')).toBe('true');
     const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
     toggle.dispatchEvent(space);
-    expect(byId('analytics').getAttribute('data-tc-open')).toBe('false');
+    expect(byId('vendor').getAttribute('data-tc-open')).toBe('false');
     expect(space.defaultPrevented).toBe(true);
+  });
+
+  it('mirrors data-tc-open into is-open on the accordion, toggle, and chevron', () => {
+    setup();
+    const toggle = byId('analytics-toggle');
+    click(toggle);
+    expect(byId('analytics').classList.contains('is-open')).toBe(true);
+    expect(toggle.classList.contains('is-open')).toBe(true);
+    expect(byId('analytics-chevron').classList.contains('is-open')).toBe(true);
+    click(toggle);
+    expect(byId('analytics').classList.contains('is-open')).toBe(false);
+    expect(toggle.classList.contains('is-open')).toBe(false);
+    expect(byId('analytics-chevron').classList.contains('is-open')).toBe(false);
+  });
+});
+
+describe('switch state', () => {
+  const on = (id) => byId(id).classList.contains('is-on');
+
+  it('sync() puts is-on on the switch wrapper and its children for allowed categories', () => {
+    const { ui } = setup();
+    ui.sync(createConsent(defaultConsent({ mode: 'opt-in' }), { analytics: true, marketing: false }));
+    expect(byId('analytics-input').checked).toBe(true);
+    expect(on('analytics-switch')).toBe(true);
+    expect(on('analytics-input')).toBe(true);
+    expect(on('analytics-knob')).toBe(true);
+    expect(on('marketing-label')).toBe(false);
+
+    ui.sync(createConsent(defaultConsent({ mode: 'opt-in' }), { analytics: false, marketing: true }));
+    expect(on('analytics-switch')).toBe(false);
+    expect(on('analytics-knob')).toBe(false);
+    // Without a switch wrapper the input's parent carries the class.
+    expect(on('marketing-label')).toBe(true);
+  });
+
+  it('follows the checkbox when the visitor flips it', () => {
+    const { ui } = setup();
+    ui.sync(defaultConsent({ mode: 'opt-in' }));
+    const input = byId('analytics-input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(on('analytics-switch')).toBe(true);
+    expect(on('analytics-knob')).toBe(true);
+    input.checked = false;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(on('analytics-switch')).toBe(false);
+    expect(ui.read()).toEqual({ analytics: false, marketing: false });
   });
 });

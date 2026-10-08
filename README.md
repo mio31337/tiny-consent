@@ -107,31 +107,38 @@ Div                 data-tc="root"                 position relative, z-index 99
 ├─ Div              data-tc="preferences"          position fixed, inset 0, centered
 │  ├─ Div           backdrop, data-tc-action="close"
 │  └─ Div           dialog
-│     ├─ Button     data-tc-action="close"         the X
+│     ├─ Button     data-tc-action="close"         the X (an SVG embed inside)
 │     ├─ Heading / Paragraph
 │     ├─ Form Block (Webflow checkboxes need one)
 │     │  └─ Div     data-tc-category="analytics" data-tc-element="accordion"     one row per category
 │     │     ├─ Div  head
-│     │     │  ├─ Div   data-tc-action="toggle" data-tc-element="chevron" role="button" tabindex="0"
-│     │     │  └─ Checkbox field (label > input + label text)   Essential: a Div with a badge instead
+│     │     │  ├─ Button  data-tc-action="toggle"
+│     │     │  │  └─ Div  data-tc-element="chevron"   SVG embed inside; rotates while open
+│     │     │  ├─ Div     title
+│     │     │  └─ Checkbox field  data-tc-element="switch"   Essential: a Div with a badge instead
+│     │     │     ├─ Checkbox input   name="Analytics"
+│     │     │     ├─ Label            hidden, for the input
+│     │     │     └─ Div              knob
 │     │     ├─ Paragraph  description
 │     │     └─ Div  data-tc-element="details"      vendor list, hidden until the chevron opens it
 │     │        └─ Div   data-tc-element="accordion"             one per vendor
-│     │           ├─ Div   head: vendor name, privacy link, chevron (same attributes as above)
+│     │           ├─ Div   head: vendor name, privacy link, chevron button (same as above)
 │     │           └─ Div   data-tc-element="details"             cookie table: name, purpose, duration
 │     └─ Div           actions
 │        ├─ Button     data-tc-action="reject-all"
 │        ├─ Button     data-tc-action="save"
 │        └─ Button     data-tc-action="accept-all"
-└─ Div              data-tc="float" data-tc-action="open-preferences" role="button" tabindex="0"
-                                                   position fixed, bottom-left; shown once a choice exists
+└─ Button           data-tc="float" data-tc-action="open-preferences"
+   ├─ Div           cookie icon (SVG embed)        position fixed, bottom-left; shown once a choice exists
+   └─ Div           "Preferences"
 ```
 
 Rules:
 
 - Keep every element inside `data-tc="root"` and keep the attributes. Everything else is yours.
-- Set attributes in Element settings → Custom attributes. Put `data-tc-category` on the row Div around each Checkbox field; the script finds the input inside. A row without a checkbox (Essential) is display only.
-- Accordions: any `data-tc-action="toggle"` flips `data-tc-open` on its nearest `data-tc-element="accordion"`; the script hides that accordion's `data-tc-element="details"` while closed and rotates its `data-tc-element="chevron"` while open. Nest them as deep as you like. In the Designer everything is expanded; on the published site everything starts closed.
+- Set attributes in Element settings → Custom attributes. Put `data-tc-category` on the row Div around each switch; the script finds the checkbox input inside. A row without a checkbox (Essential) is display only.
+- Switches: the checkbox input sits invisibly over the track; the knob is a plain Div. The script adds the combo class `is-on` to the `data-tc-element="switch"` wrapper (or the input's parent if there is no wrapper) and to its children while the category is allowed, so style the on state as `tc-switch` + `is-on` and `tc-switch_knob` + `is-on`.
+- Accordions: any `data-tc-action="toggle"` flips `data-tc-open` on its nearest `data-tc-element="accordion"`; the script hides that accordion's `data-tc-element="details"` while closed, rotates its `data-tc-element="chevron"` while open, and adds the combo class `is-open` to the accordion, the toggle, and the chevron. Nest them as deep as you like. In the Designer everything is expanded; on the published site everything starts closed.
 - The `data-tc="float"` button is hidden while the banner or the panel is open and until the visitor has made a choice. A footer link with `data-tc-element="open-preferences"` still works if you prefer that, or want both.
 - Use `button` elements (Button or Link Block with `type="button"`) inside the Form Block. The script also cancels form submission inside the component.
 - Put the component in a symbol that already sits on every page (navbar or footer component). Webflow has no API that injects a component site-wide.
@@ -152,7 +159,7 @@ Category labels are plain text. Rename "Analytics" to "Analytik" or "Statistics"
 --tc-bg         panel background
 --tc-text       primary text
 --tc-muted      secondary text
---tc-accent     primary button and checkbox color
+--tc-accent     primary button and switch color
 --tc-on-accent  text on the accent color
 --tc-radius     corner radius (panels cap at 28px so pill buttons stay sane)
 ```
