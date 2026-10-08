@@ -43,16 +43,20 @@
 
   // ---------- Head code configurator ----------
 
+  const SCRIPT_URL = 'https://cdn.jsdelivr.net/gh/mio31337/tiny-consent@main/dist/tiny-consent.min.js';
   const config = document.getElementById('config');
   const headSnippet = document.getElementById('head-snippet');
 
   function renderHead() {
     const data = new FormData(config);
-    const url = String(data.get('url') || '').trim() || 'https://cdn.example.com/tiny-consent.min.js';
+    const url = SCRIPT_URL;
     const mode = data.get('mode') === 'opt-out' ? 'opt-out' : 'opt-in';
     const days = Number(data.get('days')) || 180;
     const block = String(data.get('block') || '').trim();
-    const lines = [`<script src="${url}"`, `        data-tc-mode="${mode}"`, `        data-tc-cookie-days="${days}"`];
+    // Only emit attributes that differ from the script's defaults (opt-in, 180 days).
+    const lines = [`<script src="${url}"`];
+    if (mode !== 'opt-in') lines.push(`        data-tc-mode="${mode}"`);
+    if (days !== 180) lines.push(`        data-tc-cookie-days="${days}"`);
     if (block) lines.push(`        data-tc-block="${block.replace(/"/g, '')}"`);
     headSnippet.textContent = lines.join('\n') + '></script>';
   }
@@ -83,7 +87,7 @@
       setStatus(`Ready: ${payload.payload.nodes.length} elements, ${payload.payload.styles.length} classes.`);
     })
     .catch((error) => {
-      setStatus('Could not load preview.html: ' + error.message, 'error');
+      setStatus('Could not build the component payload: ' + error.message, 'error');
     });
 
   copyWebflow.addEventListener('click', () => {
@@ -102,4 +106,137 @@
     await copyText(paste.buildEmbed(sources));
     setStatus('Copied as HTML. Paste it into a Code Embed element.', 'ok');
   });
+
+  // ---------- Hero mock + live preview ----------
+
+  const liveRoot = document.querySelector('[data-tc="root"]');
+  const previewBar = document.getElementById('preview-bar');
+
+  // The real script runs on this page but its component stays hidden until launched.
+  // Launching clears any stored choice so the banner always appears fresh.
+  const tc = window.TinyConsent;
+
+  function startPreview(openPreferences) {
+    if (!tc) return;
+    document.documentElement.classList.add('doc-preview-on');
+    previewBar.hidden = false;
+    tc.reset();
+    if (openPreferences) tc.open();
+  }
+
+  function exitPreview() {
+    if (tc) tc.close();
+    document.documentElement.classList.remove('doc-preview-on');
+    previewBar.hidden = true;
+  }
+
+  document.querySelectorAll('[data-preview]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.preview;
+      if (action === 'launch') startPreview(false);
+      else if (action === 'launch-preferences') startPreview(true);
+      else if (action === 'restart') tc && tc.reset();
+      else if (action === 'exit') exitPreview();
+    });
+  });
+
+  // Escape closes the panel first (the script handles that); a second Escape leaves the preview.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !document.documentElement.classList.contains('doc-preview-on')) return;
+    const panel = liveRoot && liveRoot.querySelector('[data-tc="preferences"][data-tc-visible="true"]');
+    if (!panel) exitPreview();
+  });
+
+  // ---------- Setup checklist ----------
+
+  const STORE_KEY = 'tc-docs-done';
+  const rail = document.getElementById('rail');
+  const railCount = document.getElementById('rail-count');
+  const railProgress = document.getElementById('rail-progress');
+  const railReset = document.getElementById('rail-reset');
+  const steps = Array.from(document.querySelectorAll('.doc-step[data-step]'));
+
+  const stepIds = new Set(steps.map((step) => step.dataset.step));
+
+  function readDone() {
+    try {
+      const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+      // Drop ids of steps that no longer exist on the page.
+      return new Set((Array.isArray(list) ? list : []).filter((id) => stepIds.has(id)));
+    } catch {
+      return new Set();
+    }
+  }
+
+  function writeDone(done) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify([...done]));
+    } catch {
+      /* private mode or storage disabled: ticks still work for this page view */
+    }
+  }
+
+  function renderDone(done) {
+    rail.querySelectorAll('.doc-rail_item').forEach((item) => {
+      const on = done.has(item.dataset.step);
+      item.classList.toggle('is-done', on);
+      item.querySelector('.doc-rail_check').checked = on;
+    });
+    steps.forEach((step) => step.classList.toggle('is-done', done.has(step.dataset.step)));
+    const total = steps.length;
+    railCount.textContent = done.size === total ? 'All done' : `${done.size} of ${total} done`;
+    railProgress.style.width = `${(done.size / total) * 100}%`;
+    railReset.hidden = done.size === 0;
+  }
+
+  if (rail) {
+    let done = readDone();
+    renderDone(done);
+
+    rail.addEventListener('change', (event) => {
+      const box = event.target.closest('.doc-rail_check');
+      if (!box) return;
+      const step = box.closest('.doc-rail_item').dataset.step;
+      if (box.checked) done.add(step);
+      else done.delete(step);
+      writeDone(done);
+      renderDone(done);
+    });
+
+    railReset.addEventListener('click', () => {
+      done = new Set();
+      writeDone(done);
+      renderDone(done);
+    });
+
+    // Highlight the step closest to the top of the viewport.
+    function setCurrent(id) {
+      rail.querySelectorAll('.doc-rail_item').forEach((item) => {
+        item.classList.toggle('is-current', item.dataset.step === id);
+      });
+    }
+
+    // The current step is the last one whose top has passed a line a third of the way down the viewport.
+    let ticking = false;
+    function updateCurrent() {
+      ticking = false;
+      const line = window.innerHeight * 0.33;
+      if (!steps.length) return;
+      let current = null;
+      for (const step of steps) {
+        if (step.getBoundingClientRect().top <= line) current = step;
+      }
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (atBottom) current = steps[steps.length - 1];
+      setCurrent(current ? current.dataset.step : null);
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      setTimeout(updateCurrent, 40);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    updateCurrent();
+  }
 })();

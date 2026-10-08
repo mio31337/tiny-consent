@@ -78,29 +78,6 @@ code {
   color: var(--tc-muted);
 }
 
-.demo-brands {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.demo-chip {
-  font: inherit;
-  font-size: 14px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--tc-text) 18%, transparent);
-  background: var(--tc-bg);
-  color: var(--tc-text);
-  cursor: pointer;
-}
-
-.demo-chip.is-active {
-  background: var(--tc-accent);
-  color: var(--tc-on-accent);
-  border-color: var(--tc-accent);
-}
-
 .demo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

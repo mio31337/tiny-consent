@@ -11,9 +11,8 @@ A small first-party cookie consent kit for Webflow projects. One static script b
 
 - `src/` script source (`tiny-consent.js` entry, `consent.js`, `blocker.js`, `ui.js`, `blocklist.js`)
 - `dist/` built bundle to host (`tiny-consent.js`, `tiny-consent.min.js`)
-- `demo/index.html` onboarding docs: every step below with copy buttons, a head-code configurator, and **Copy component for Webflow**
-- `demo/preview.html` the live component with the exact tree, brand presets, and a tag status panel
-- `demo/webflow-paste.js` turns the preview component and `tiny-consent-theme.css` into a Webflow clipboard payload
+- `demo/index.html` onboarding docs: the setup steps with copy buttons, a head-code configurator, **Copy component for Webflow**, and a live preview of the component (the exact tree, driven by the real script)
+- `demo/webflow-paste.js` turns the component tree in `index.html` and `tiny-consent-theme.css` into a Webflow clipboard payload
 - `demo/clipboard-inspector.html` shows what any clipboard holds, for checking the Webflow format
 - `test/` Vitest suite
 
@@ -88,7 +87,7 @@ Remove `<noscript>` fallbacks from tracker snippets. They fire without consent.
 
 On the docs page (`npm run dev`, step 4) press **Copy component for Webflow**. The clipboard then holds the component in Webflow's own clipboard format (`@webflow/XscpData`): native Div, Heading, Paragraph, Button, and Checkbox elements, one class per element with the default theme values, and all `data-tc` attributes set. In the Designer, select the footer (or any component that is on every page), enter the component, and paste.
 
-The payload is generated from `demo/preview.html` plus `demo/tiny-consent-theme.css`, so it always matches the preview. During generation `var()` becomes the default value, `color-mix()` becomes `rgba()`, `:hover` becomes the Hover state, and the `max-width: 560px` media query becomes the Tablet/Mobile breakpoint. After pasting, swap the flat colors for your site's variables.
+The payload is generated from the component tree in `demo/index.html` plus `demo/tiny-consent-theme.css`, so it always matches the live preview. During generation `var()` becomes the default value, `color-mix()` becomes `rgba()`, `:hover` becomes the Hover state, and the `max-width: 560px` media query becomes the Tablet/Mobile breakpoint. After pasting, swap the flat colors for your site's variables.
 
 If nothing appears, open `demo/clipboard-inspector.html`, copy an element in the Designer, and paste into the inspector to see the exact MIME type and shape Webflow currently uses. **Copy as HTML embed** is the fallback: paste into a Code Embed element. Works instantly, not styleable in the Designer.
 
@@ -148,7 +147,7 @@ Rules:
 - Put the component in a symbol that already sits on every page (navbar or footer component). Webflow has no API that injects a component site-wide.
 - Leave the banner visible in the Designer. On the published site the script hides it until it is needed, so there is no flash and you can still see it while designing. Hide the preferences panel and the float button while you work and set them back before publishing.
 
-`demo/preview.html` is the same tree in plain HTML. Use it as the reference when building the Webflow version.
+The `[data-tc="root"]` block at the end of `demo/index.html` is the same tree in plain HTML. Use it as the reference when building the Webflow version.
 
 ### Visible names
 

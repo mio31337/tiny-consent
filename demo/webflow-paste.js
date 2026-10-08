@@ -1,6 +1,6 @@
-// Builds a Webflow clipboard payload (@webflow/XscpData) from the live component in
-// preview.html and the class rules in tiny-consent-theme.css, so the Designer paste
-// always matches the reference. Also builds a plain HTML embed as a fallback.
+// Builds a Webflow clipboard payload (@webflow/XscpData) from the component tree in
+// index.html (the one the live preview uses) and the class rules in tiny-consent-theme.css,
+// so the Designer paste always matches the reference. Also builds a plain HTML embed as a fallback.
 //
 // Node shapes follow what the Designer itself puts on the clipboard:
 //   div / span                       Block (data.text true when it only holds text)
@@ -558,12 +558,14 @@
   async function loadSources(base) {
     const prefix = base || './';
     const [html, css] = await Promise.all([
-      fetch(prefix + 'preview.html').then((r) => r.text()),
+      fetch(prefix + 'index.html').then((r) => r.text()),
       fetch(prefix + 'tiny-consent-theme.css').then((r) => r.text()),
     ]);
+    // The pristine markup is fetched rather than read from the live document, because the
+    // script running on the docs page mutates its copy (state attributes, generated vendors).
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const root = doc.querySelector('[data-tc="root"]');
-    if (!root) throw new Error('preview.html has no [data-tc="root"] element');
+    if (!root) throw new Error('index.html has no [data-tc="root"] element');
     return { root, css };
   }
 

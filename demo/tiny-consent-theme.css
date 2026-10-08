@@ -21,35 +21,6 @@
   --tc-radius-row: min(calc(var(--tc-radius) * 0.6), 16px);
 }
 
-.brand-forest {
-  --tc-font: Georgia, "Times New Roman", serif;
-  --tc-bg: #f3f6f1;
-  --tc-text: #16301f;
-  --tc-muted: #4f6b58;
-  --tc-accent: #1f6b3a;
-  --tc-on-accent: #f3f6f1;
-  --tc-radius: 4px;
-}
-
-.brand-night {
-  --tc-bg: #0f1218;
-  --tc-text: #e9ecf3;
-  --tc-muted: #9aa3b5;
-  --tc-accent: #8b9cff;
-  --tc-on-accent: #0f1218;
-  --tc-radius: 20px;
-}
-
-.brand-coral {
-  --tc-font: "Avenir Next", "Helvetica Neue", Arial, sans-serif;
-  --tc-bg: #fff7f3;
-  --tc-text: #2b1a14;
-  --tc-muted: #8a6f66;
-  --tc-accent: #ff5a3c;
-  --tc-on-accent: #ffffff;
-  --tc-radius: 999px;
-}
-
 /* Root: a zero-size anchor. Banner and panel position themselves against the viewport. */
 .tc-root {
   position: relative;
