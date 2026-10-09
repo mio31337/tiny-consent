@@ -80,7 +80,7 @@
   }
 
   paste
-    .loadSources('./')
+    .loadSources(window.TC_DOCS_BASE || './')
     .then((loaded) => {
       sources = loaded;
       copyWebflow.disabled = false;
